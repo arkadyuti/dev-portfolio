@@ -1,0 +1,135 @@
+name: Deploy Portfolio
+on:
+  push:
+    branches: [ main ]  # Change this to match your main branch name if different
+  workflow_dispatch:    # Allows manual workflow runs
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'yarn'
+
+      - name: Install dependencies
+        run: yarn install --frozen-lockfile
+
+      - name: Build application
+        run: |
+          echo "Building Next.js application..."
+          yarn build
+
+      - name: Set up SSH
+        uses: shimataro/ssh-key-action@v2
+        with:
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          known_hosts: 'just-a-placeholder'
+
+      - name: Add remote host to known hosts
+        run: |
+          mkdir -p ~/.ssh
+          echo "Adding ${{ secrets.SSH_HOST }} to known hosts..."
+          ssh-keyscan -H ${{ secrets.SSH_HOST }} >> ~/.ssh/known_hosts
+          chmod 600 ~/.ssh/known_hosts
+
+      - name: Create deployment archive
+        run: |
+          # Create a clean temporary directory for deployment
+          rm -rf ./deploy-temp || true
+          mkdir -p ./deploy-temp
+          
+          # Copy necessary files to the temp directory
+          rsync -av --exclude=".git" --exclude="node_modules" --exclude=".next/cache" \
+                --exclude="yarn-error.log" --exclude="*.log" \
+                ./ ./deploy-temp/
+          
+          # Create the tarball from the temp directory
+          tar -czf portfolio-deploy.tar.gz -C ./deploy-temp .
+          
+          # Clean up the temporary directory
+          rm -rf ./deploy-temp
+
+      - name: Transfer files to server
+        run: |
+          echo "Transferring files to server..."
+          scp -o StrictHostKeyChecking=no portfolio-deploy.tar.gz ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}:/root/services/portfolio-deploy.tar.gz
+
+      - name: Deploy to production
+        run: |
+          ssh -o StrictHostKeyChecking=no ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} << 'EOF'
+            # Force using bash instead of fish
+            bash -c '
+            # Navigate to the services directory
+            cd /root/services/
+          
+            # Stop the current container (uncomment if needed)
+            # docker compose down || true
+          
+            # Remove old portfolio directory if it exists
+            rm -rf /root/services/portfolio
+          
+            # Create new portfolio directory
+            mkdir -p portfolio
+          
+            # Extract the new deployment
+            tar -xzf portfolio-deploy.tar.gz -C portfolio
+          
+            # Use docker-compose.yml from the deployed code instead of from /root/services/
+            cd portfolio
+          
+            # Start the container using the docker-compose.yml from the deployed code
+            echo "Starting container..."
+            docker compose up -d
+          
+            # Wait for container to be fully running
+            echo "Waiting for container to be ready..."
+            attempt=1
+            max_attempts=30
+          
+            until [ $attempt -gt $max_attempts ] || docker container inspect portfolio --format="{{.State.Running}}" 2>/dev/null | grep -q "true"; do
+              echo "Attempt $attempt/$max_attempts: Container not ready yet, waiting..."
+              sleep 2
+              attempt=$((attempt+1))
+            done
+          
+            if [ $attempt -gt $max_attempts ]; then
+              echo "Container failed to start properly within time limit!"
+              docker compose logs
+              exit 1
+            fi
+          
+            # Further verification of application health
+            echo "Verifying application health..."
+            timeout=120
+            start_time=$(date +%s)
+            end_time=$((start_time + timeout))
+            while [ $(date +%s) -lt $end_time ]; do
+              if curl -s http://localhost:3000/ > /dev/null; then
+                echo "Application is responding!"
+                break
+              fi
+              echo "Waiting for application to respond..."
+              sleep 10
+            done
+          
+            if ! curl -s http://localhost:3000/ > /dev/null; then
+              echo "Application failed to respond within timeout!"
+              docker compose logs
+              exit 1
+            fi
+          
+            # Clean up
+            cd ..
+            rm -f portfolio-deploy.tar.gz
+          
+            # Verify deployment
+            echo "Deployment successful! Container is running and application is responding."
+            docker ps | grep portfolio
+            '
+          EOF
