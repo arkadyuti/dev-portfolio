@@ -4,8 +4,8 @@ import { Upload, Image as ImageIcon } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
 interface ImageUploadProps {
-  value?: string
-  onChange: (value: string) => void
+  value?: string | File
+  onChange: (value: File | null) => void
   className?: string
   label?: string
 }
@@ -17,23 +17,21 @@ const ImageUpload: React.FC<ImageUploadProps> = ({
   label = 'Upload Image',
 }) => {
   const [isUploading, setIsUploading] = useState(false)
-  const [previewUrl, setPreviewUrl] = useState<string | null>(value || null)
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
-  // Mock upload function
-  const mockUpload = (file: File): Promise<string> => {
-    return new Promise((resolve) => {
-      // Simulate API call delay
-      setTimeout(() => {
-        const reader = new FileReader()
-        reader.onloadend = () => {
-          // Normally this would be a URL from your API
-          resolve(reader.result as string)
-        }
-        reader.readAsDataURL(file)
-      }, 1500)
-    })
-  }
+  // Create preview URL when value changes
+  React.useEffect(() => {
+    if (value instanceof File) {
+      const url = URL.createObjectURL(value)
+      setPreviewUrl(url)
+      return () => URL.revokeObjectURL(url)
+    } else if (typeof value === 'string') {
+      setPreviewUrl(value)
+    } else {
+      setPreviewUrl(null)
+    }
+  }, [value])
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
@@ -41,9 +39,7 @@ const ImageUpload: React.FC<ImageUploadProps> = ({
 
     try {
       setIsUploading(true)
-      const imageUrl = await mockUpload(file)
-      setPreviewUrl(imageUrl)
-      onChange(imageUrl)
+      onChange(file)
     } catch (error) {
       console.error('Upload failed:', error)
     } finally {
@@ -55,7 +51,9 @@ const ImageUpload: React.FC<ImageUploadProps> = ({
     }
   }
 
-  const handleClick = () => {
+  const handleClick = (e: React.MouseEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
     fileInputRef.current?.click()
   }
 
@@ -73,6 +71,7 @@ const ImageUpload: React.FC<ImageUploadProps> = ({
         <div className="relative aspect-video overflow-hidden rounded-md bg-muted">
           <img src={previewUrl} alt="Preview" className="h-full w-full object-cover" />
           <Button
+            type="button"
             variant="secondary"
             className="absolute bottom-2 right-2"
             onClick={handleClick}

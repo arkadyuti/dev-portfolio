@@ -32,7 +32,10 @@ const formSchema = z.object({
   excerpt: z.string().min(1, 'Excerpt is required'),
   content: z.string().min(1, 'Content is required'),
   featured: z.boolean().default(false),
-  coverImage: z.string().min(1, 'Cover image is required'),
+  coverImage: z.union([
+    z.instanceof(File),
+    z.string().min(1, 'Cover image is required')
+  ]),
   tags: z
     .array(
       z.object({
@@ -98,11 +101,41 @@ const AdminBlogForm: React.FC = () => {
   // Handle form submission
   const onSubmit = async (data: FormValues, isDraft: boolean = false) => {
     try {
-      // In a real app, we'd make an API call here
-      console.log('Submitting form data:', data, 'isDraft:', isDraft)
+      // Create FormData object
+      const formData = new FormData()
+      
+      // Append all form fields to FormData
+      Object.entries(data).forEach(([key, value]) => {
+        if (key === 'tags') {
+          // Handle tags array
+          formData.append('tags', JSON.stringify(value))
+        } else if (key === 'coverImage') {
+          // Only append if it's a new File object
+          if (value instanceof File) {
+            formData.append('coverImage', value)
+          }
+          // Skip if it's a string (existing image URL)
+        } else {
+          // Convert all other values to string
+          formData.append(key, String(value))
+        }
+      })
 
-      // Simulate API call
-      await new Promise((resolve) => setTimeout(resolve, 1000))
+      // Add draft status
+      formData.append('isDraft', String(isDraft))
+
+      // Make the API call
+      const endpoint = id && id !== 'new' ? `/api/blog?blogId=${id}` : '/api/blog'
+      // const endpoint = '/api/blog?blogId='+id
+      const response = await fetch(endpoint, {
+        method: 'POST',
+        body: formData,
+      })
+
+      if (!response.ok) {
+        const error = await response.json()
+        throw new Error(error.message || 'Failed to save blog post')
+      }
 
       const statusMessage = isDraft ? 'saved as draft' : 'published'
       toast.success(
@@ -113,7 +146,7 @@ const AdminBlogForm: React.FC = () => {
       router.push('/admin/blogs')
     } catch (error) {
       console.error('Error saving blog post:', error)
-      toast.error('Failed to save blog post')
+      toast.error(error instanceof Error ? error.message : 'Failed to save blog post')
     }
   }
 
@@ -138,8 +171,8 @@ const AdminBlogForm: React.FC = () => {
     if (title) {
       const slug = title
         .toLowerCase()
-        .replace(/[^a-z0-9 ]/g, '')
-        .replace(/\s+/g, '-')
+        .replace(/[^a-z0-9]+/g, '-')  // Replace any sequence of non-alphanumeric chars with a single dash
+        .replace(/^-|-$/g, '');       // Remove leading and trailing dashes
       form.setValue('slug', slug)
     }
   }
@@ -168,6 +201,7 @@ const AdminBlogForm: React.FC = () => {
             <form
               onSubmit={form.handleSubmit((data) => onSubmit(data, false))}
               className="space-y-6"
+              encType="multipart/form-data"
             >
               <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
                 <FormField

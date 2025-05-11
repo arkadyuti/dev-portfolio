@@ -1,6 +1,3 @@
-'use client'
-import { useState, useEffect, Suspense } from 'react'
-import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
@@ -13,144 +10,71 @@ import {
   PaginationPrevious,
 } from '@/components/ui/pagination'
 import { Search } from 'lucide-react'
-import { getPaginatedBlogPosts, getFilteredBlogPosts, tags, BlogPost } from '@/data/blog-data'
 import Link from '@/components/ui/Link'
+import BlogModels, { transformToBlogs } from 'models/blog'
 
-// Loading component to show while content is loading
-function BlogPageLoading() {
-  return (
-    <section className="py-12 md:py-20">
-      <div className="container-custom">
-        <div className="mb-12 text-center">
-          <div className="mx-auto h-10 w-64 animate-pulse rounded-md bg-muted"></div>
-        </div>
+// Server-side data fetching
+async function getBlogs(searchParams: { [key: string]: string | string[] | undefined }) {
+  const page = parseInt(searchParams.page as string || '1')
+  const limit = 6
+  const skip = (page - 1) * limit
+  const tag = searchParams.tag as string
+  const search = searchParams.q as string
 
-        <div className="mb-10 space-y-6">
-          <div className="flex gap-2">
-            <div className="flex-1 h-10 animate-pulse rounded-md bg-muted"></div>
-            <div className="w-24 h-10 animate-pulse rounded-md bg-muted"></div>
-          </div>
+  // Build query
+  const query: any = { isDraft: false }
+  if (tag) {
+    query.tags = tag
+  }
+  if (search) {
+    query.$or = [
+      { title: { $regex: search, $options: 'i' } },
+      { excerpt: { $regex: search, $options: 'i' } },
+      { 'tags.name': { $regex: search, $options: 'i' } }
+    ]
+  }
 
-          <div className="flex flex-wrap gap-2">
-            {[1, 2, 3, 4, 5].map((i) => (
-              <div key={i} className="h-6 w-20 animate-pulse rounded-full bg-muted"></div>
-            ))}
-          </div>
-        </div>
+  // Get total count
+  const totalBlogs = await BlogModels.countDocuments(query)
 
-        <div className="mb-10 grid grid-cols-1 gap-8 md:grid-cols-2 lg:grid-cols-3">
-          {[1, 2, 3, 4, 5, 6].map((i) => (
-            <div key={i} className="rounded-md overflow-hidden animate-pulse">
-              <div className="aspect-video bg-muted"></div>
-              <div className="p-6 space-y-2">
-                <div className="h-4 w-24 bg-muted rounded"></div>
-                <div className="h-6 w-full bg-muted rounded"></div>
-                <div className="h-4 w-full bg-muted rounded"></div>
-                <div className="h-4 w-3/4 bg-muted rounded"></div>
-                <div className="mt-4 flex gap-2">
-                  <div className="h-6 w-16 bg-muted rounded-full"></div>
-                  <div className="h-6 w-16 bg-muted rounded-full"></div>
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
-    </section>
-  )
+  // Get paginated blogs
+  const blogs = await BlogModels.find(query)
+    .sort({ publishedAt: -1 })
+    .skip(skip)
+    .limit(limit)
+    .lean()
+
+  return {
+    blogs: transformToBlogs(blogs),
+    pagination: {
+      total: totalBlogs,
+      page,
+      limit,
+      totalPages: Math.ceil(totalBlogs / limit)
+    }
+  }
 }
 
-// Main content component that uses useSearchParams
-function BlogPageContent() {
-  const router = useRouter()
-  const { useSearchParams } = require('next/navigation')
-  const searchParams = useSearchParams()
+// Get all tags for filtering
+async function getTags() {
+  const blogs = await BlogModels.find({ isDraft: false }).select('tags').lean()
+  const tags = new Set()
+  blogs.forEach(blog => {
+    blog.tags.forEach((tag: any) => tags.add(tag.name))
+  })
+  return Array.from(tags).map((name, index) => ({ id: String(index + 1), name }))
+}
 
-  const currentPage = parseInt(searchParams.get('page') || '1')
-  const selectedTagId = searchParams.get('tag')
-  const searchQuery = searchParams.get('q') || ''
-  const postsPerPage = 6
-
-  const [filteredPosts, setFilteredPosts] = useState<BlogPost[]>([])
-  const [displayedPosts, setDisplayedPosts] = useState<BlogPost[]>([])
-  const [totalPages, setTotalPages] = useState(1)
-  const [searchInput, setSearchInput] = useState(searchQuery)
-
-  useEffect(() => {
-    // Get posts filtered by tag if specified
-    let posts = selectedTagId ? getFilteredBlogPosts(selectedTagId) : getFilteredBlogPosts(null)
-
-    // Apply search filter if present
-    if (searchQuery) {
-      posts = posts.filter(
-        (post) =>
-          post.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          post.excerpt.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          post.tags.some((tag) => tag.name.toLowerCase().includes(searchQuery.toLowerCase()))
-      )
-    }
-
-    setFilteredPosts(posts)
-
-    // Apply pagination
-    setDisplayedPosts(posts.slice((currentPage - 1) * postsPerPage, currentPage * postsPerPage))
-    setTotalPages(Math.ceil(posts.length / postsPerPage))
-  }, [selectedTagId, currentPage, searchQuery])
-
-  // Helper function to create URL with new search params
-  const createQueryString = (params: Record<string, string | null>) => {
-    const newSearchParams = new URLSearchParams(searchParams.toString())
-
-    // Process each parameter
-    Object.entries(params).forEach(([key, value]) => {
-      if (value === null) {
-        newSearchParams.delete(key)
-      } else {
-        newSearchParams.set(key, value)
-      }
-    })
-
-    return newSearchParams.toString()
-  }
-
-  const handleTagClick = (tagId: string) => {
-    const params: Record<string, string | null> = { page: '1' }
-
-    if (selectedTagId === tagId) {
-      // If the same tag is clicked again, remove the filter
-      params.tag = null
-    } else {
-      params.tag = tagId
-    }
-
-    router.push(`?${createQueryString(params)}`)
-  }
-
-  const handleSearch = (e: React.FormEvent) => {
-    e.preventDefault()
-    const params: Record<string, string | null> = { page: '1' }
-
-    if (searchInput.trim()) {
-      params.q = searchInput
-    } else {
-      params.q = null
-    }
-
-    router.push(`?${createQueryString(params)}`)
-  }
-
-  const clearSearch = () => {
-    setSearchInput('')
-    router.push(`?${createQueryString({ q: null })}`)
-  }
-
-  const handlePageChange = (page: number) => {
-    router.push(`?${createQueryString({ page: page.toString() })}`)
-  }
-
-  const resetFilters = () => {
-    router.push('') // Clear all search params
-  }
+export default async function BlogPage({
+  searchParams,
+}: {
+  searchParams: { [key: string]: string | string[] | undefined }
+}) {
+  const { blogs, pagination } = await getBlogs(searchParams)
+  const tags = await getTags()
+  const currentPage = parseInt(searchParams.page as string || '1')
+  const selectedTagId = searchParams.tag as string
+  const searchQuery = searchParams.q as string || ''
 
   return (
     <section className="py-12 md:py-20">
@@ -159,11 +83,11 @@ function BlogPageContent() {
 
         {/* Search and filter section */}
         <div className="mb-10 space-y-6">
-          <form onSubmit={handleSearch} className="flex gap-2">
+          <form action="/blog" method="GET" className="flex gap-2">
             <Input
               placeholder="Search posts..."
-              value={searchInput}
-              onChange={(e) => setSearchInput(e.target.value)}
+              name="q"
+              defaultValue={searchQuery}
               className="flex-1"
             />
             <Button type="submit">
@@ -171,8 +95,8 @@ function BlogPageContent() {
               Search
             </Button>
             {searchQuery && (
-              <Button variant="ghost" onClick={clearSearch}>
-                Clear
+              <Button variant="ghost" asChild>
+                <Link href="/blog">Clear</Link>
               </Button>
             )}
           </form>
@@ -181,11 +105,13 @@ function BlogPageContent() {
             {tags.map((tag) => (
               <Badge
                 key={tag.id}
-                variant={selectedTagId === tag.id ? 'default' : 'outline'}
+                variant={selectedTagId === tag.name ? 'default' : 'outline'}
                 className="cursor-pointer hover:bg-secondary/80"
-                onClick={() => handleTagClick(tag.id)}
+                asChild
               >
-                {tag.name}
+                <Link href={`/blog?tag=${tag.name}`}>
+                  {tag.name}
+                </Link>
               </Badge>
             ))}
           </div>
@@ -195,17 +121,17 @@ function BlogPageContent() {
         {(selectedTagId || searchQuery) && (
           <div className="mb-6 rounded-md bg-muted p-3 text-sm">
             <p>
-              {filteredPosts.length} post(s) found
-              {selectedTagId && ` with tag: ${tags.find((t) => t.id === selectedTagId)?.name}`}
+              {pagination.total} post(s) found
+              {selectedTagId && ` with tag: ${selectedTagId}`}
               {searchQuery && ` containing: "${searchQuery}"`}
             </p>
           </div>
         )}
 
         {/* Blog posts grid */}
-        {displayedPosts.length > 0 ? (
+        {blogs.length > 0 ? (
           <div className="mb-10 grid grid-cols-1 gap-8 md:grid-cols-2 lg:grid-cols-3">
-            {displayedPosts.map((post) => (
+            {blogs.map((post) => (
               <Link key={post.id} href={`/blog/${post.slug}`} className="blog-card group block">
                 <div className="aspect-video overflow-hidden">
                   <img
@@ -216,7 +142,7 @@ function BlogPageContent() {
                 </div>
                 <div className="p-6">
                   <p className="mb-2 text-sm text-muted-foreground">
-                    {new Date(post.date).toLocaleDateString('en-US', {
+                    {new Date(post.publishedAt).toLocaleDateString('en-US', {
                       year: 'numeric',
                       month: 'long',
                       day: 'numeric',
@@ -240,29 +166,31 @@ function BlogPageContent() {
         ) : (
           <div className="py-10 text-center">
             <p className="text-xl text-muted-foreground">No posts found matching your criteria.</p>
-            <Button variant="outline" className="mt-4" onClick={resetFilters}>
-              Reset filters
+            <Button variant="outline" className="mt-4" asChild>
+              <Link href="/blog">Reset filters</Link>
             </Button>
           </div>
         )}
 
         {/* Pagination */}
-        {displayedPosts.length > 0 && totalPages > 1 && (
+        {blogs.length > 0 && pagination.totalPages > 1 && (
           <Pagination>
             <PaginationContent>
               {currentPage > 1 && (
                 <PaginationItem>
-                  <PaginationPrevious
-                    onClick={() => handlePageChange(currentPage - 1)}
+                  <PaginationLink
+                    href={`/blog?page=${currentPage - 1}${selectedTagId ? `&tag=${selectedTagId}` : ''}${searchQuery ? `&q=${searchQuery}` : ''}`}
                     className="cursor-pointer"
-                  />
+                  >
+                    Previous
+                  </PaginationLink>
                 </PaginationItem>
               )}
 
-              {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+              {Array.from({ length: pagination.totalPages }, (_, i) => i + 1).map((page) => (
                 <PaginationItem key={page}>
                   <PaginationLink
-                    onClick={() => handlePageChange(page)}
+                    href={`/blog?page=${page}${selectedTagId ? `&tag=${selectedTagId}` : ''}${searchQuery ? `&q=${searchQuery}` : ''}`}
                     isActive={page === currentPage}
                     className="cursor-pointer"
                   >
@@ -271,12 +199,14 @@ function BlogPageContent() {
                 </PaginationItem>
               ))}
 
-              {currentPage < totalPages && (
+              {currentPage < pagination.totalPages && (
                 <PaginationItem>
-                  <PaginationNext
-                    onClick={() => handlePageChange(currentPage + 1)}
+                  <PaginationLink
+                    href={`/blog?page=${currentPage + 1}${selectedTagId ? `&tag=${selectedTagId}` : ''}${searchQuery ? `&q=${searchQuery}` : ''}`}
                     className="cursor-pointer"
-                  />
+                  >
+                    Next
+                  </PaginationLink>
                 </PaginationItem>
               )}
             </PaginationContent>
@@ -286,14 +216,3 @@ function BlogPageContent() {
     </section>
   )
 }
-
-// Main page component with Suspense
-const BlogPage = () => {
-  return (
-    <Suspense fallback={<BlogPageLoading />}>
-      <BlogPageContent />
-    </Suspense>
-  )
-}
-
-export default BlogPage

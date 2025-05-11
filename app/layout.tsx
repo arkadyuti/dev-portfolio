@@ -10,6 +10,7 @@ import { AuthProvider } from '@/contexts/AuthContext'
 import { TooltipProvider } from '@/components/ui/tooltip'
 import { Toaster } from '@/components/ui/toaster'
 import { Toaster as Sonner } from '@/components/ui/sonner'
+import connectToDatabase from '@/lib/mongodb'
 
 // Load Inter font
 const inter = Inter({
@@ -67,8 +68,9 @@ export const metadata: Metadata = {
   },
 }
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+export default async function RootLayout({ children }: { children: React.ReactNode }) {
   const basePath = process.env.BASE_PATH || ''
+  await connectToDatabase();
 
   return (
     <html
