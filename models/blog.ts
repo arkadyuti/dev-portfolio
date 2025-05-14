@@ -39,7 +39,7 @@ export const transformToType = <T>(
 }
 
 // Utility function to transform and validate Mongoose document to IBlog
-export const transformToBlog = (doc: BlogDocument | Record<string, never> | null): IBlog | null => {
+export const transformToBlog = (doc: Document | Record<string, any> | null): IBlog | null => {
   return transformToType(doc, blogSchema)
 }
 
@@ -99,9 +99,8 @@ const BlogSchema = new Schema<IBlog>(
       unique: true,
       sparse: true, // This allows the field to be unique only if it exists
     },
-    // Adding the new field
     content: {
-      type: [Schema.Types.Mixed],
+      type: String,
       required: [true, 'Please provide content for this blog'],
     },
   },

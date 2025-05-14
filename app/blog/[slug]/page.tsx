@@ -1,103 +1,51 @@
-'use client'
-import { useState, useEffect } from 'react'
-import { useParams } from 'next/navigation'
-import { ArrowLeft, Share2, Facebook, Twitter, Linkedin } from 'lucide-react'
+import { notFound } from 'next/navigation'
+import { ArrowLeft } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
-import { getBlogPostBySlug, getRelatedPosts } from '@/data/blog-data'
-import { NotFound } from './NotFound'
-import { toast } from '@/components/ui/sonner'
 import { calculateReadingTime } from '@/utils/reading-time'
 import Link from '@/components/ui/Link'
 import Image from 'next/image'
+import BlogModels, { transformToBlog, IBlog } from 'models/blog'
+import { ShareButtons } from './ShareButtons'
 
-const BlogDetail = () => {
-  const { slug } = useParams<{ slug: string }>()
-  const [post, setPost] = useState(slug ? getBlogPostBySlug(slug) : null)
-  const [relatedPosts, setRelatedPosts] = useState([])
-  const [readingTime, setReadingTime] = useState(0)
+// Server-side data fetching
+async function getBlogPost(slug: string): Promise<IBlog | null> {
+  try {
+    const post = await BlogModels.findOne({ slug, isDraft: false }).lean()
+    if (!post) return null
+    return transformToBlog(post)
+  } catch (error) {
+    console.error('Error fetching blog post:', error)
+    return null
+  }
+}
 
-  useEffect(() => {
-    if (slug) {
-      const foundPost = getBlogPostBySlug(slug)
-      setPost(foundPost)
+async function getRelatedPosts(currentPostId: string): Promise<IBlog[]> {
+  try {
+    const posts = await BlogModels.find({ 
+      id: { $ne: currentPostId },
+      isDraft: false 
+    })
+      .sort({ publishedAt: -1 })
+      .limit(2)
+      .lean()
+    
+    return posts.map(post => transformToBlog(post)).filter((post): post is IBlog => post !== null)
+  } catch (error) {
+    console.error('Error fetching related posts:', error)
+    return []
+  }
+}
 
-      if (foundPost) {
-        setRelatedPosts(getRelatedPosts(foundPost.id, 2))
-        setReadingTime(calculateReadingTime(foundPost.content))
-      }
-    }
-  }, [slug])
-
+export default async function BlogDetail({ params }: { params: { slug: string } }) {
+  const post = await getBlogPost(params.slug)
+  
   if (!post) {
-    return <NotFound />
+    notFound()
   }
 
-  // Share functionality
-  const handleShare = (platform: string) => {
-    const url = window.location.href
-    const title = post.title
-    let shareUrl = ''
-
-    switch (platform) {
-      case 'facebook':
-        shareUrl = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(url)}`
-        break
-      case 'twitter':
-        shareUrl = `https://twitter.com/intent/tweet?url=${encodeURIComponent(url)}&text=${encodeURIComponent(title)}`
-        break
-      case 'linkedin':
-        shareUrl = `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(url)}`
-        break
-      case 'copy':
-        navigator.clipboard.writeText(url)
-        toast('Link copied to clipboard!')
-        return
-    }
-
-    if (shareUrl) {
-      window.open(shareUrl, '_blank', 'width=600,height=400')
-    }
-  }
-
-  // Convert markdown content to HTML paragraphs
-  // This is a very simple implementation - in a real app you would use a markdown parser
-  const contentParagraphs = post.content.split('\n\n').map((paragraph, index) => {
-    if (paragraph.startsWith('# ')) {
-      return (
-        <h1 key={index} className="mb-4 mt-8 text-3xl font-bold">
-          {paragraph.substring(2)}
-        </h1>
-      )
-    } else if (paragraph.startsWith('## ')) {
-      return (
-        <h2 key={index} className="mb-3 mt-6 text-2xl font-bold">
-          {paragraph.substring(3)}
-        </h2>
-      )
-    } else if (paragraph.startsWith('### ')) {
-      return (
-        <h3 key={index} className="mb-2 mt-5 text-xl font-bold">
-          {paragraph.substring(4)}
-        </h3>
-      )
-    } else if (paragraph.startsWith('- ')) {
-      const items = paragraph.split('\n').map((item) => item.substring(2))
-      return (
-        <ul key={index} className="mb-4 mt-2 list-disc space-y-1 pl-5">
-          {items.map((item, i) => (
-            <li key={i}>{item}</li>
-          ))}
-        </ul>
-      )
-    } else {
-      return (
-        <p key={index} className="mb-4">
-          {paragraph}
-        </p>
-      )
-    }
-  })
+  const relatedPosts = await getRelatedPosts(post.id)
+  const readingTime = calculateReadingTime(post.content)
 
   return (
     <>
@@ -125,8 +73,8 @@ const BlogDetail = () => {
                 <span>{post.author}</span>
               </div>
 
-              <time dateTime={post.date}>
-                {new Date(post.date).toLocaleDateString('en-US', {
+              <time dateTime={post.publishedAt.toString()}>
+                {new Date(post.publishedAt).toLocaleDateString('en-US', {
                   year: 'numeric',
                   month: 'long',
                   day: 'numeric',
@@ -152,55 +100,26 @@ const BlogDetail = () => {
 
           {/* Cover Image */}
           <div className="mb-10 overflow-hidden rounded-xl">
-            <Image src={post.coverImage} alt={post.title} className="h-auto w-full object-cover" />
+            <Image 
+              width={848} 
+              height={560} 
+              src={post.coverImage} 
+              alt={post.title} 
+              className="h-auto w-full object-cover"
+              priority
+            />
           </div>
 
           {/* Content */}
-          <div className="prose prose-lg max-w-none">{contentParagraphs}</div>
+          <div className="prose prose-lg max-w-none">
+            <p className="mb-4">
+              {post.content}
+          </p>
+          </div>
 
           {/* Share buttons */}
           <div className="mt-10 border-t pt-4">
-            <div className="flex items-center gap-2">
-              <span className="text-sm font-medium">Share this post:</span>
-              <div className="flex gap-2">
-                <Button
-                  variant="outline"
-                  size="icon"
-                  className="rounded-full"
-                  onClick={() => handleShare('facebook')}
-                  title="Share on Facebook"
-                >
-                  <Facebook className="h-4 w-4" />
-                </Button>
-                <Button
-                  variant="outline"
-                  size="icon"
-                  className="rounded-full"
-                  onClick={() => handleShare('twitter')}
-                  title="Share on Twitter"
-                >
-                  <Twitter className="h-4 w-4" />
-                </Button>
-                <Button
-                  variant="outline"
-                  size="icon"
-                  className="rounded-full"
-                  onClick={() => handleShare('linkedin')}
-                  title="Share on LinkedIn"
-                >
-                  <Linkedin className="h-4 w-4" />
-                </Button>
-                <Button
-                  variant="outline"
-                  size="icon"
-                  className="rounded-full"
-                  onClick={() => handleShare('copy')}
-                  title="Copy link"
-                >
-                  <Share2 className="h-4 w-4" />
-                </Button>
-              </div>
-            </div>
+            <ShareButtons post={post} />
           </div>
 
           {/* Tags */}
@@ -234,6 +153,8 @@ const BlogDetail = () => {
                 >
                   <div className="aspect-video overflow-hidden">
                     <Image
+                      width={406}
+                      height={228}
                       src={relatedPost.coverImage}
                       alt={relatedPost.title}
                       className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
@@ -261,5 +182,3 @@ const BlogDetail = () => {
     </>
   )
 }
-
-export default BlogDetail

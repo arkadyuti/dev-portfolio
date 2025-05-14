@@ -7,10 +7,11 @@
  * @returns The estimated reading time in minutes (minimum 1 minute)
  */
 export function calculateReadingTime(content: string): number {
-  const wordsPerMinute = 200;
-  const wordCount = content.trim().split(/\s+/).length;
-  const readingTime = Math.ceil(wordCount / wordsPerMinute);
+  // const wordsPerMinute = 200;
+  // const wordCount = content.trim().split(/\s+/).length;
+  // const readingTime = Math.ceil(wordCount / wordsPerMinute);
   
-  // Return at least 1 minute of reading time
-  return Math.max(1, readingTime);
+  // // Return at least 1 minute of reading time
+  // return Math.max(1, readingTime);
+  return 1
 }
