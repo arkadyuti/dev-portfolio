@@ -2,6 +2,7 @@ import React, { useState, useRef } from 'react'
 import { Button } from '@/components/ui/button'
 import { Upload, Image as ImageIcon } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import Image from 'next/image'
 
 interface ImageUploadProps {
   value?: string | File
@@ -69,7 +70,7 @@ const ImageUpload: React.FC<ImageUploadProps> = ({
 
       {previewUrl ? (
         <div className="relative aspect-video overflow-hidden rounded-md bg-muted">
-          <img src={previewUrl} alt="Preview" className="h-full w-full object-cover" />
+          <Image src={previewUrl} alt="Preview" className="h-full w-full object-cover" width={1286} height={723} />
           <Button
             type="button"
             variant="secondary"
@@ -84,6 +85,14 @@ const ImageUpload: React.FC<ImageUploadProps> = ({
         <div
           className="flex cursor-pointer flex-col items-center justify-center rounded-md border-2 border-dashed p-8 transition-colors hover:bg-secondary/50"
           onClick={handleClick}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+              e.preventDefault()
+              handleClick(e as unknown as React.MouseEvent)
+            }
+          }}
+          role="button"
+          tabIndex={0}
         >
           {isUploading ? (
             <div className="flex flex-col items-center justify-center gap-2">

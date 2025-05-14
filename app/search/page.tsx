@@ -70,7 +70,6 @@ const SearchPage = () => {
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="flex-1 py-6 text-lg"
-              autoFocus
             />
             <Button type="submit" size="lg" disabled={searching}>
               <Search className="mr-2 h-5 w-5" />

@@ -76,6 +76,14 @@ module.exports = () => {
           protocol: 'https',
           hostname: 'picsum.photos',
         },
+        {
+          protocol: 'https',
+          hostname: 'images.unsplash.com',
+        },
+        {
+          protocol: 'http',
+          hostname: 'minio-api.3027622.siliconpin.com',
+        }
       ],
       unoptimized,
     },

@@ -70,7 +70,7 @@ export const metadata: Metadata = {
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
   const basePath = process.env.BASE_PATH || ''
-  await connectToDatabase();
+  await connectToDatabase()
 
   return (
     <html

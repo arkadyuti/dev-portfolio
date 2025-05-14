@@ -3,6 +3,7 @@ import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Card, CardContent } from '@/components/ui/card'
 import { profile } from '@/data/profile-data'
+import Image from 'next/image'
 
 const AboutPage = () => {
   const socialLinks = [
@@ -87,6 +88,8 @@ const AboutPage = () => {
                     src={profile.profileImage}
                     alt={profile.name}
                     className="h-auto w-full object-cover"
+                    width={293}
+                    height={195}
                   />
                 </div>
 

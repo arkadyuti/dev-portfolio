@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { v4 as uuidv4 } from 'uuid';
-import { minioClient, uploadFile, makeFilePublic, getPublicFileUrl } from '@/lib/minio';
-import BlogModels from 'models/blog';
+import { v4 as uuidv4 } from 'uuid'
+import { minioClient, uploadFile, makeFilePublic, getPublicFileUrl } from '@/lib/minio'
+import BlogModels from 'models/blog'
 
 export async function POST(request: NextRequest) {
   try {
@@ -18,11 +18,11 @@ export async function POST(request: NextRequest) {
     const tags = JSON.parse(formData.get('tags') as string)
     const isDraft = formData.get('isDraft') === 'true'
 
-    let coverImageKey = '';
-    let coverImageUrl = '';
+    let coverImageKey = ''
+    let coverImageUrl = ''
 
     const targetBlogId = blogId ? blogId : uuidv4()
-    
+
     // Handle cover image upload if provided
     if (coverImage) {
       // Convert file to buffer
@@ -36,22 +36,17 @@ export async function POST(request: NextRequest) {
       // Get the bucket name from environment variable
       const bucketName = process.env.MINIO_IMAGE_BUCKET
       // Upload to MinIO with metadata
-      await uploadFile(
-        bucketName,
-        filename,
-        buffer,
-        {
-          'Content-Type': coverImage.type || 'application/octet-stream',
-          'Original-Name': coverImage.name,
-          'Upload-Date': new Date().toISOString()
-        }
-      )
+      await uploadFile(bucketName, filename, buffer, {
+        'Content-Type': coverImage.type || 'application/octet-stream',
+        'Original-Name': coverImage.name,
+        'Upload-Date': new Date().toISOString(),
+      })
 
-      coverImageKey = filename;
-      
+      coverImageKey = filename
+
       // Make the specific image file public and get permanent URL
-      await makeFilePublic(bucketName, filename);
-      coverImageUrl = getPublicFileUrl(bucketName, filename);
+      await makeFilePublic(bucketName, filename)
+      coverImageUrl = getPublicFileUrl(bucketName, filename)
     }
 
     const dataToSave = {
@@ -65,40 +60,43 @@ export async function POST(request: NextRequest) {
       tags,
       isDraft,
       ...(coverImageUrl && { coverImage: coverImageUrl }),
-      ...(coverImageKey && { coverImageKey })
+      ...(coverImageKey && { coverImageKey }),
     }
 
-    let savedArticle;
+    let savedArticle
     if (blogId) {
       // Update existing blog
-      const existingBlog = await BlogModels.findOne({ id: blogId });
+      const existingBlog = await BlogModels.findOne({ id: blogId })
       if (!existingBlog) {
-        return NextResponse.json(
-          { success: false, message: 'Blog not found' },
-          { status: 404 }
-        )
+        return NextResponse.json({ success: false, message: 'Blog not found' }, { status: 404 })
       }
 
       // If updating and there's a new cover image, we might want to clean up the old one
-      if (coverImage && existingBlog.coverImageKey && existingBlog.coverImageKey !== coverImageKey) {
+      if (
+        coverImage &&
+        existingBlog.coverImageKey &&
+        existingBlog.coverImageKey !== coverImageKey
+      ) {
         // Delete old image if needed (optional)
         // await deleteFile(bucketName, existingBlog.coverImageKey);
       }
 
       // Update the document with new data
-      Object.assign(existingBlog, dataToSave);
-      savedArticle = await existingBlog.save();
+      Object.assign(existingBlog, dataToSave)
+      savedArticle = await existingBlog.save()
     } else {
       // Create new blog
-      const newArticle = new BlogModels(dataToSave);
-      savedArticle = await newArticle.save();
+      const newArticle = new BlogModels(dataToSave)
+      savedArticle = await newArticle.save()
     }
 
-    return NextResponse.json({
-      success: true,
-      data: savedArticle
-    }, { status: 200 })
-    
+    return NextResponse.json(
+      {
+        success: true,
+        data: savedArticle,
+      },
+      { status: 200 }
+    )
   } catch (error) {
     console.error('Error processing blog post:', error)
     return NextResponse.json(
