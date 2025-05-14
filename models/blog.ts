@@ -11,7 +11,7 @@ export const blogSchema = z.object({
   coverImageKey: z.string().optional(),
   author: z.string(),
   slug: z.string(),
-  content: z.any(),
+  content: z.string(),
   tags: z.any(),
   featured: z.boolean(),
   isDraft: z.boolean().optional(),
