@@ -13,7 +13,11 @@ export async function GET(request: NextRequest) {
     const totalBlogs = await BlogModels.countDocuments()
 
     // Get paginated blogs sorted by publishedAt
-    const blogs = await BlogModels.find({isDraft: false}).sort({ publishedAt: -1 }).skip(skip).limit(limit).lean()
+    const blogs = await BlogModels.find({ isDraft: false })
+      .sort({ publishedAt: -1 })
+      .skip(skip)
+      .limit(limit)
+      .lean()
 
     if (!blogs || blogs.length === 0) {
       return NextResponse.json({ success: false, message: 'No blogs found' }, { status: 404 })

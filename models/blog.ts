@@ -44,7 +44,7 @@ export const transformToBlog = (doc: BlogDocument | Record<string, never> | null
 }
 
 // Utility function to transform and validate multiple Mongoose documents to IBlog array
-export const transformToBlogs = (docs: (BlogDocument | Record<string, never>)[]): IBlog[] => {
+export const transformToBlogs = (docs: (BlogDocument | Record<string, any>)[]): IBlog[] => {
   return docs
     .map((doc) => transformToType(doc, blogSchema))
     .filter((blog): blog is IBlog => blog !== null)

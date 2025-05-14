@@ -20,7 +20,7 @@ export interface Tag {
 
 interface SearchableTagSelectProps {
   availableTags: Tag[]
-  selectedTags: any
+  selectedTags: Tag[]
   onChange: (tags: Tag[]) => void
   onCreateTag?: (tagName: string) => void
 }

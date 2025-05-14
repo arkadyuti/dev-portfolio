@@ -32,10 +32,7 @@ const formSchema = z.object({
   excerpt: z.string().min(1, 'Excerpt is required'),
   content: z.string().min(1, 'Content is required'),
   featured: z.boolean().default(false),
-  coverImage: z.union([
-    z.instanceof(File),
-    z.string().min(1, 'Cover image is required')
-  ]),
+  coverImage: z.union([z.instanceof(File), z.string().min(1, 'Cover image is required')]),
   tags: z
     .array(
       z.object({
@@ -103,7 +100,7 @@ const AdminBlogForm: React.FC = () => {
     try {
       // Create FormData object
       const formData = new FormData()
-      
+
       // Append all form fields to FormData
       Object.entries(data).forEach(([key, value]) => {
         if (key === 'tags') {
@@ -171,8 +168,8 @@ const AdminBlogForm: React.FC = () => {
     if (title) {
       const slug = title
         .toLowerCase()
-        .replace(/[^a-z0-9]+/g, '-')  // Replace any sequence of non-alphanumeric chars with a single dash
-        .replace(/^-|-$/g, '');       // Remove leading and trailing dashes
+        .replace(/[^a-z0-9]+/g, '-') // Replace any sequence of non-alphanumeric chars with a single dash
+        .replace(/^-|-$/g, '') // Remove leading and trailing dashes
       form.setValue('slug', slug)
     }
   }

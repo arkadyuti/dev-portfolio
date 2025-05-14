@@ -9,6 +9,7 @@ import { NotFound } from './NotFound'
 import { toast } from '@/components/ui/sonner'
 import { calculateReadingTime } from '@/utils/reading-time'
 import Link from '@/components/ui/Link'
+import Image from 'next/image'
 
 const BlogDetail = () => {
   const { slug } = useParams<{ slug: string }>()
@@ -151,7 +152,7 @@ const BlogDetail = () => {
 
           {/* Cover Image */}
           <div className="mb-10 overflow-hidden rounded-xl">
-            <img src={post.coverImage} alt={post.title} className="h-auto w-full object-cover" />
+            <Image src={post.coverImage} alt={post.title} className="h-auto w-full object-cover" />
           </div>
 
           {/* Content */}
@@ -232,7 +233,7 @@ const BlogDetail = () => {
                   className="blog-card group block"
                 >
                   <div className="aspect-video overflow-hidden">
-                    <img
+                    <Image
                       src={relatedPost.coverImage}
                       alt={relatedPost.title}
                       className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"

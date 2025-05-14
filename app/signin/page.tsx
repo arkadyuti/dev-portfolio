@@ -1,6 +1,6 @@
 'use client'
 import React, { useState, useEffect, Suspense } from 'react'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import * as z from 'zod'
@@ -30,9 +30,6 @@ function SignInContent() {
   const [showPassword, setShowPassword] = useState(false)
   const { login, isAuthenticated, isLoading } = useAuth()
   const router = useRouter()
-
-  // Import useSearchParams inside the component that's wrapped with Suspense
-  const { useSearchParams } = require('next/navigation')
   const searchParams = useSearchParams()
 
   // Get the return URL from search params (if any)

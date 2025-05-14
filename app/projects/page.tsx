@@ -2,6 +2,7 @@ import { ExternalLink, Github } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { projects } from '@/data/project-data'
+import Image from 'next/image'
 
 const ProjectsPage = () => {
   return (
@@ -27,9 +28,11 @@ const ProjectsPage = () => {
                   <div className="group relative">
                     <div className="absolute -inset-0.5 rounded-lg bg-gradient-to-r from-primary to-purple-600 opacity-30 blur transition duration-1000 group-hover:opacity-70"></div>
                     <div className="relative overflow-hidden rounded-lg border bg-card">
-                      <img
+                      <Image
                         src={project.imageUrl}
                         alt={project.title}
+                        width={800}
+                        height={450}
                         className="aspect-video h-auto w-full object-cover"
                       />
                     </div>

@@ -6,6 +6,7 @@ import { profile } from '@/data/profile-data'
 import { blogPosts } from '@/data/blog-data'
 import { getFeaturedProjects } from '@/data/project-data'
 import Link from '@/components/ui/Link'
+import Image from 'next/image'
 
 export default function Home() {
   const featuredProjects = getFeaturedProjects()
@@ -32,9 +33,11 @@ export default function Home() {
             <div className="animate-slide-up flex justify-center lg:col-span-5 lg:justify-end">
               <div className="relative">
                 <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-primary/20 to-primary/0 blur-xl"></div>
-                <img
+                <Image
                   src={profile.profileImage}
                   alt={profile.name}
+                  width={400}
+                  height={400}
                   className="w-full max-w-md rounded-2xl object-cover shadow-xl"
                 />
               </div>
@@ -95,9 +98,11 @@ export default function Home() {
           <div className="grid grid-cols-1 gap-8 md:grid-cols-2">
             {featuredProjects.map((project) => (
               <Card key={project.id} className="flex h-full flex-col overflow-hidden">
-                <img
+                <Image
                   src={project.imageUrl}
                   alt={project.title}
+                  width={800}
+                  height={400}
                   className="h-48 w-full object-cover"
                 />
                 <CardContent className="flex flex-grow flex-col p-6">
@@ -151,9 +156,11 @@ export default function Home() {
             {recentPosts.map((post) => (
               <Link key={post.id} href={`/blog/${post.slug}`} className="blog-card group block">
                 <div className="aspect-video overflow-hidden">
-                  <img
+                  <Image
                     src={post.coverImage}
                     alt={post.title}
+                    width={400}
+                    height={225}
                     className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
                   />
                 </div>
