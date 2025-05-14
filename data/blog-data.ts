@@ -20,7 +20,7 @@ export interface BlogPost {
 
 export const blogPosts: BlogPost[] = [
   {
-    id: "1",
+    id: "808670f2-da92-4359-8a4e-a6b3c28ed90e",
     title: "Getting Started with React",
     slug: "getting-started-with-react",
     author: "Jane Smith",
@@ -32,7 +32,7 @@ export const blogPosts: BlogPost[] = [
     featured: true
   },
   {
-    id: "2",
+    id: "27c306bd-9cdb-416e-8399-3e7ab4006885",
     title: "Mastering TypeScript",
     slug: "mastering-typescript",
     author: "John Doe",
@@ -43,7 +43,7 @@ export const blogPosts: BlogPost[] = [
     tags: [{ id: "2", name: "JavaScript" }, { id: "3", name: "TypeScript" }]
   },
   {
-    id: "3",
+    id: "27c306bd-9cdb-416e-8399-3e7ab4006886",
     title: "CSS Tips and Tricks",
     slug: "css-tips-and-tricks",
     author: "Sarah Johnson",

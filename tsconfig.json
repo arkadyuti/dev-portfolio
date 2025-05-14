@@ -23,6 +23,7 @@
       "@/contexts/*": ["contexts/*"],
       "@/hooks/*": ["hooks/*"],
       "@/data/*": ["data/*"],
+      "@/models/*": ["models/*"],
     },
     "plugins": [
       {
