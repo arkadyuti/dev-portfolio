@@ -14,12 +14,19 @@ import Link from '@/components/ui/Link'
 import BlogModels, { transformToBlogs } from 'models/blog'
 
 // Server-side data fetching
+async function parseSearchParams(searchParams: { [key: string]: string | string[] | undefined }) {
+  const params = await Promise.resolve(searchParams)
+  return {
+    page: params.page ? parseInt(params.page as string) : 1,
+    tag: params.tag ? (params.tag as string) : undefined,
+    search: params.q ? (params.q as string) : undefined
+  }
+}
+
 async function getBlogs(searchParams: { [key: string]: string | string[] | undefined }) {
-  const page = parseInt(searchParams.page as string || '1')
+  const { page, tag, search } = await parseSearchParams(searchParams)
   const limit = 6
   const skip = (page - 1) * limit
-  const tag = searchParams.tag as string
-  const search = searchParams.q as string
 
   // Build query
   const query: any = { isDraft: false }
@@ -58,7 +65,7 @@ async function getBlogs(searchParams: { [key: string]: string | string[] | undef
 // Get all tags for filtering
 async function getTags() {
   const blogs = await BlogModels.find({ isDraft: false }).select('tags').lean()
-  const tags = new Set()
+  const tags = new Set<string>()
   blogs.forEach(blog => {
     blog.tags.forEach((tag: any) => tags.add(tag.name))
   })
@@ -70,11 +77,9 @@ export default async function BlogPage({
 }: {
   searchParams: { [key: string]: string | string[] | undefined }
 }) {
+  const { page: currentPage, tag: selectedTagId, search: searchQuery } = await parseSearchParams(searchParams)
   const { blogs, pagination } = await getBlogs(searchParams)
   const tags = await getTags()
-  const currentPage = parseInt(searchParams.page as string || '1')
-  const selectedTagId = searchParams.tag as string
-  const searchQuery = searchParams.q as string || ''
 
   return (
     <section className="py-12 md:py-20">
@@ -95,7 +100,7 @@ export default async function BlogPage({
               Search
             </Button>
             {searchQuery && (
-              <Button variant="ghost" asChild>
+              <Button variant="ghost">
                 <Link href="/blog">Clear</Link>
               </Button>
             )}
@@ -103,16 +108,17 @@ export default async function BlogPage({
 
           <div className="flex flex-wrap gap-2">
             {tags.map((tag) => (
-              <Badge
+              <Link
                 key={tag.id}
-                variant={selectedTagId === tag.name ? 'default' : 'outline'}
+                href={`/blog?tag=${tag.name}`}
                 className="cursor-pointer hover:bg-secondary/80"
-                asChild
               >
-                <Link href={`/blog?tag=${tag.name}`}>
+                <Badge
+                  variant={selectedTagId === tag.name ? 'default' : 'outline'}
+                >
                   {tag.name}
-                </Link>
-              </Badge>
+                </Badge>
+              </Link>
             ))}
           </div>
         </div>
@@ -166,7 +172,7 @@ export default async function BlogPage({
         ) : (
           <div className="py-10 text-center">
             <p className="text-xl text-muted-foreground">No posts found matching your criteria.</p>
-            <Button variant="outline" className="mt-4" asChild>
+            <Button variant="outline" className="mt-4">
               <Link href="/blog">Reset filters</Link>
             </Button>
           </div>

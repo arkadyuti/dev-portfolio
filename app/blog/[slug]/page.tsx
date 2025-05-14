@@ -37,8 +37,14 @@ async function getRelatedPosts(currentPostId: string): Promise<IBlog[]> {
   }
 }
 
+async function parseParams(params: { slug: string }) {
+  const resolvedParams = await Promise.resolve(params)
+  return resolvedParams.slug
+}
+
 export default async function BlogDetail({ params }: { params: { slug: string } }) {
-  const post = await getBlogPost(params.slug)
+  const slug = await parseParams(params)
+  const post = await getBlogPost(slug)
   
   if (!post) {
     notFound()

@@ -66,7 +66,7 @@ export async function POST(request: NextRequest) {
     let savedArticle
     if (blogId) {
       // Update existing blog
-      const existingBlog = await BlogModels.findOne({ id: blogId })
+      const existingBlog = await BlogModels.findOne({ slug: blogId })
       if (!existingBlog) {
         return NextResponse.json({ success: false, message: 'Blog not found' }, { status: 404 })
       }

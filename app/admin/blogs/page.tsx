@@ -1,5 +1,5 @@
 'use client'
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import {
@@ -10,52 +10,115 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
-import { Plus, Search, Edit, Trash } from 'lucide-react'
-import { blogPosts } from '@/data/blog-data'
+import { Plus, Search, Edit, Trash, ArrowUpDown } from 'lucide-react'
 import { toast } from '@/components/ui/sonner'
 import Link from '@/components/ui/Link'
+import { IBlog } from 'models/blog'
 
 // Define possible blog status types
 type BlogStatus = 'published' | 'draft'
 
 // Add status to blog posts
-interface BlogWithStatus {
-  id: string
-  title: string
-  slug: string
-  date: string
-  featured: boolean
+interface BlogWithStatus extends Omit<IBlog, 'isDraft'> {
   status: BlogStatus
 }
 
+type SortField = 'publishedAt' | 'status' | 'featured'
+type SortOrder = 'asc' | 'desc'
+
 const AdminBlogPage: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('')
+  const [blogs, setBlogs] = useState<BlogWithStatus[]>([])
+  const [isLoading, setIsLoading] = useState(true)
+  const [sortField, setSortField] = useState<SortField>('publishedAt')
+  const [sortOrder, setSortOrder] = useState<SortOrder>('desc')
 
-  // Initialize blogs with mock status
-  const [blogs, setBlogs] = useState<BlogWithStatus[]>(() =>
-    blogPosts.map((blog) => ({
-      id: blog.id,
-      title: blog.title,
-      slug: blog.slug,
-      date: blog.date,
-      featured: blog.featured || false,
-      // Randomly assign status for demo purposes
-      status: Math.random() > 0.3 ? 'published' : 'draft',
-    }))
-  )
+  useEffect(() => {
+    fetchBlogs()
+  }, [])
 
-  // Filter blogs based on search query
-  const filteredBlogs = blogs.filter((blog) =>
-    blog.title.toLowerCase().includes(searchQuery.toLowerCase())
-  )
-
-  // Mock deletion function
-  const handleDelete = (id: string) => {
-    if (confirm('Are you sure you want to delete this blog post? This action cannot be undone.')) {
-      // In a real app, we'd call an API here
-      setBlogs(blogs.filter((blog) => blog.id !== id))
-      toast('Blog post deleted successfully')
+  const fetchBlogs = async () => {
+    try {
+      const response = await fetch('/api/blogs?fetchAll=true')
+      const data = await response.json()
+      
+      if (data.success) {
+        const blogsWithStatus = data.data.map((blog: IBlog) => ({
+          ...blog,
+          status: blog.isDraft ? 'draft' : 'published'
+        }))
+        setBlogs(blogsWithStatus)
+      } else {
+        toast.error('Failed to fetch blogs')
+      }
+    } catch (error) {
+      console.error('Error fetching blogs:', error)
+      toast.error('Failed to fetch blogs')
+    } finally {
+      setIsLoading(false)
     }
+  }
+
+  const handleSort = (field: SortField) => {
+    if (sortField === field) {
+      // Toggle sort order if clicking the same field
+      setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')
+    } else {
+      // Set new sort field and default to descending order
+      setSortField(field)
+      setSortOrder('desc')
+    }
+  }
+
+  // Sort and filter blogs
+  const filteredAndSortedBlogs = blogs
+    .filter((blog) => blog.title.toLowerCase().includes(searchQuery.toLowerCase()))
+    .sort((a, b) => {
+      let comparison = 0
+      
+      switch (sortField) {
+        case 'publishedAt':
+          comparison = a.publishedAt - b.publishedAt
+          break
+        case 'status':
+          comparison = a.status.localeCompare(b.status)
+          break
+        case 'featured':
+          comparison = (a.featured ? 1 : 0) - (b.featured ? 1 : 0)
+          break
+      }
+      
+      return sortOrder === 'asc' ? comparison : -comparison
+    })
+
+  // Delete function
+  const handleDelete = async (id: string) => {
+    if (confirm('Are you sure you want to delete this blog post? This action cannot be undone.')) {
+      try {
+        const response = await fetch(`/api/blog/${id}`, {
+          method: 'DELETE',
+        })
+        const data = await response.json()
+
+        if (data.success) {
+          setBlogs(blogs.filter((blog) => blog.id !== id))
+          toast.success('Blog post deleted successfully')
+        } else {
+          toast.error(data.message || 'Failed to delete blog post')
+        }
+      } catch (error) {
+        console.error('Error deleting blog:', error)
+        toast.error('Failed to delete blog post')
+      }
+    }
+  }
+
+  if (isLoading) {
+    return (
+      <div className="flex h-[50vh] items-center justify-center">
+        <p className="text-muted-foreground">Loading blogs...</p>
+      </div>
+    )
   }
 
   return (
@@ -85,21 +148,45 @@ const AdminBlogPage: React.FC = () => {
           <TableHeader>
             <TableRow>
               <TableHead className="w-[250px]">Title</TableHead>
-              <TableHead className="hidden md:table-cell">Date</TableHead>
-              <TableHead className="hidden md:table-cell">Status</TableHead>
-              <TableHead className="hidden md:table-cell">Featured</TableHead>
+              <TableHead 
+                className="hidden md:table-cell cursor-pointer"
+                onClick={() => handleSort('publishedAt')}
+              >
+                <div className="flex items-center">
+                  Date
+                  <ArrowUpDown className="ml-2 h-4 w-4" />
+                </div>
+              </TableHead>
+              <TableHead 
+                className="hidden md:table-cell cursor-pointer"
+                onClick={() => handleSort('status')}
+              >
+                <div className="flex items-center">
+                  Status
+                  <ArrowUpDown className="ml-2 h-4 w-4" />
+                </div>
+              </TableHead>
+              <TableHead 
+                className="hidden md:table-cell cursor-pointer"
+                onClick={() => handleSort('featured')}
+              >
+                <div className="flex items-center">
+                  Featured
+                  <ArrowUpDown className="ml-2 h-4 w-4" />
+                </div>
+              </TableHead>
               <TableHead className="text-right">Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
-            {filteredBlogs.length === 0 ? (
+            {filteredAndSortedBlogs.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={5} className="py-8 text-center text-muted-foreground">
                   No blog posts found
                 </TableCell>
               </TableRow>
             ) : (
-              filteredBlogs.map((blog) => (
+              filteredAndSortedBlogs.map((blog) => (
                 <TableRow key={blog.id}>
                   <TableCell className="font-medium">
                     <Link href={`/blog/${blog.slug}`} className="hover:underline" target="_blank">
@@ -107,7 +194,7 @@ const AdminBlogPage: React.FC = () => {
                     </Link>
                   </TableCell>
                   <TableCell className="hidden md:table-cell">
-                    {new Date(blog.date).toLocaleDateString()}
+                    {new Date(blog.publishedAt).toLocaleDateString()}
                   </TableCell>
                   <TableCell className="hidden md:table-cell">
                     {blog.status === 'published' ? (
@@ -131,7 +218,7 @@ const AdminBlogPage: React.FC = () => {
                   </TableCell>
                   <TableCell className="space-x-2 text-right">
                     <Button variant="ghost" size="icon" asChild>
-                      <Link href={`/admin/blogs/edit/${blog.id}`}>
+                      <Link href={`/admin/blogs/edit/${blog.slug}`}>
                         <Edit className="h-4 w-4" />
                         <span className="sr-only">Edit</span>
                       </Link>

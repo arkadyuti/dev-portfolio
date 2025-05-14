@@ -7,13 +7,18 @@ export async function GET(request: NextRequest) {
     const searchParams = request.nextUrl.searchParams
     const page = parseInt(searchParams.get('page') || '1')
     const limit = parseInt(searchParams.get('limit') || '10')
+    const fetchAll = searchParams.get('fetchAll')
     const skip = (page - 1) * limit
 
     // Get total count of blogs
     const totalBlogs = await BlogModels.countDocuments()
-
+    
     // Get paginated blogs sorted by publishedAt
-    const blogs = await BlogModels.find({ isDraft: false })
+    const mongoQuery: { isDraft?: boolean } = {}
+    if (fetchAll === "") {
+      mongoQuery.isDraft = false
+    }
+    const blogs = await BlogModels.find(mongoQuery)
       .sort({ publishedAt: -1 })
       .skip(skip)
       .limit(limit)
