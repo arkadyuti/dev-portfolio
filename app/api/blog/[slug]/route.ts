@@ -36,3 +36,28 @@ export async function GET(request: NextRequest, context: { params: Promise<{ slu
     )
   }
 }
+
+export async function DELETE(request: NextRequest, context: { params: Promise<{ slug: string }> }) {
+  try {
+    const { slug: identifier } = await context.params
+
+    // Try to find and delete the blog post by id or slug
+    const deletedBlog = await BlogModels.findOneAndDelete({
+      $or: [{ id: identifier }, { slug: identifier }],
+    })
+
+    if (!deletedBlog) {
+      return NextResponse.json({ success: false, message: 'Blog not found' }, { status: 404 })
+    }
+
+    return NextResponse.json(
+      { success: true, message: 'Blog post deleted successfully' },
+      { status: 200 }
+    )
+  } catch (error) {
+    return NextResponse.json(
+      { success: false, message: 'Failed to delete blog post' },
+      { status: 500 }
+    )
+  }
+}
