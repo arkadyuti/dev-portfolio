@@ -129,11 +129,12 @@ export default async function BlogPage({
                 href={`/blog${selectedTagId === tag.name ? '' : `?tag=${tag.name}`}${searchQuery ? `&q=${searchQuery}` : ''}`}
                 className="transition-colors"
               >
-                <Badge 
+                <Badge
                   variant={selectedTagId === tag.name ? 'default' : 'outline'}
-                  className={selectedTagId === tag.name 
-                    ? 'hover:bg-primary/90' 
-                    : 'hover:bg-primary/10 hover:text-primary'
+                  className={
+                    selectedTagId === tag.name
+                      ? 'hover:bg-primary/90'
+                      : 'hover:bg-primary/10 hover:text-primary'
                   }
                 >
                   {tag.name}
