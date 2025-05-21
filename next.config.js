@@ -1,3 +1,4 @@
+/* eslint-disable */
 const withBundleAnalyzer = require('@next/bundle-analyzer')({
   enabled: process.env.ANALYZE === 'true',
 })
@@ -83,7 +84,11 @@ module.exports = () => {
         {
           protocol: 'http',
           hostname: 'minio-api.3027622.siliconpin.com',
-        }
+        },
+        {
+          protocol: 'https',
+          hostname: 'minio-api.3027622.siliconpin.com',
+        },
       ],
       unoptimized,
     },

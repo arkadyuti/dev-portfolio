@@ -1,4 +1,3 @@
-
 export interface Profile {
   name: string
   title: string
@@ -18,7 +17,7 @@ export interface Profile {
 }
 
 export const profile: Profile = {
-  name: "John Doe",
+  name: "Arkadyuti Sarkar",
   title: "Frontend Associate Architect",
   bio: "I'm a passionate frontend architect with expertise in building scalable, performant web applications. I specialize in modern JavaScript frameworks and love creating exceptional user experiences.",
   longBio: `
@@ -37,29 +36,33 @@ I believe in taking a thoughtful approach to frontend development that considers
 
 ## Professional Journey
 
-My journey began as a UI designer, which gave me a strong foundation in user experience and interface design. I transitioned to frontend development, where I found my passion for translating designs into functional, accessible code.
+My journey began as a UI designer, which gave me a strong foundation in user experience and interface design. 
+I transitioned to frontend development, where I found my passion for translating designs into functional, accessible code.
 
-As I progressed in my career, I became increasingly interested in the architectural aspects of frontend development—how to structure applications that can scale effectively and remain maintainable over time.
+As I progressed in my career, I became increasingly interested in the architectural aspects of frontend development—how to structure applications 
+that can scale effectively and remain maintainable over time.
 
-Today, as a Frontend Associate Architect, I work at the intersection of design, development, and architecture. I help teams implement best practices, establish conventions, and build robust frontend systems that serve both users and developers well.
+Today, as a Frontend Associate Architect, I work at the intersection of design, development, and architecture. I help teams implement 
+best practices, establish conventions, and build robust frontend systems that serve both users and developers well.
 
 ## Beyond Coding
 
-When I'm not coding, I enjoy contributing to open-source projects, writing technical articles, and mentoring junior developers. I'm also an avid photographer and enjoy hiking in my free time.
-
-I'm always open to discussing new projects, opportunities, or just chatting about frontend development. Feel free to reach out!
+Outside of my core work, I enjoy engaging in discussions around frontend technologies and sharing knowledge through mentoring junior developers. 
+I'm also passionate about exploring Golang, diving into IoT experiments, and tinkering with new tech. 
+In my downtime, you'll often find me gaming on my PC or PS5—it's my way of relaxing and staying inspired by great user experiences. 
+Feel free to reach out!
   `,
-  profileImage: "https://images.unsplash.com/photo-1649972904349-6e44c42644a7",
+  profileImage: "http://minio-api.3027622.siliconpin.com/portfolio/709bccba-9dd5-47dc-9825-445caa3f5c07_1747858835509_cover-image.jpg",
   socialLinks: {
-    github: "https://github.com/johndoe",
-    linkedin: "https://linkedin.com/in/johndoe",
-    twitter: "https://twitter.com/johndoe",
-    email: "mailto:john@example.com"
+    github: "https://github.com/arkadyuti",
+    linkedin: "https://www.linkedin.com/in/arkadyuti/",
+    twitter: "https://x.com/arkadooti",
+    email: "mailto:arkadooti.sarkar@gmail.com"
   },
   skills: [
     {
       category: "Frontend Frameworks",
-      items: ["React", "Angular", "Vue.js", "Next.js", "Gatsby"]
+      items: ["React", "Angular", "Next.js", "Vue.js"]
     },
     {
       category: "Languages",
@@ -67,15 +70,15 @@ I'm always open to discussing new projects, opportunities, or just chatting abou
     },
     {
       category: "State Management",
-      items: ["Redux", "MobX", "Context API", "Recoil", "React Query"]
+      items: ["Redux", "Context API", "React Query"]
     },
     {
       category: "UI Libraries",
-      items: ["Tailwind CSS", "Material UI", "Styled Components", "Emotion", "Chakra UI"]
+      items: ["Tailwind CSS", "Material UI", "Styled Components"]
     },
     {
       category: "Testing",
-      items: ["Jest", "React Testing Library", "Cypress", "Storybook"]
+      items: ["Jest", "React Testing Library"]
     },
     {
       category: "Build Tools",
@@ -83,7 +86,7 @@ I'm always open to discussing new projects, opportunities, or just chatting abou
     },
     {
       category: "Architecture",
-      items: ["Micro Frontends", "Component Libraries", "Design Systems", "Progressive Web Apps"]
+      items: ["Micro Frontends", "Component Libraries", "Design Systems", "Progressive Web Apps", "Container Orchestration"]
     }
   ]
 }

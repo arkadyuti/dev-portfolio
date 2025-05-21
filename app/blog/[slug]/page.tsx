@@ -7,6 +7,9 @@ import Link from '@/components/ui/Link'
 import Image from 'next/image'
 import BlogModels, { transformToBlog, IBlog } from 'models/blog'
 import { ShareButtons } from './ShareButtons'
+import { Metadata } from 'next'
+import { genPageMetadata, generateArticleStructuredData } from '../../seo'
+import Script from 'next/script'
 
 // Server-side data fetching
 async function getBlogPost(slug: string): Promise<IBlog | null> {
@@ -40,6 +43,33 @@ async function getRelatedPosts(currentPostId: string): Promise<IBlog[]> {
 // Force dynamic rendering
 export const dynamic = 'force-dynamic'
 
+// Generate metadata for the page
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ slug: string }>
+}): Promise<Metadata> {
+  const { slug } = await params
+  const post = await getBlogPost(slug)
+
+  if (!post) {
+    return genPageMetadata({
+      title: 'Blog Post Not Found',
+      description: 'The requested blog post could not be found',
+    })
+  }
+
+  // Extract keywords from tags
+  const keywords = post.tags.map((tag) => tag.name).join(', ')
+
+  return genPageMetadata({
+    title: post.title,
+    description: post.excerpt,
+    keywords,
+    image: post.coverImage,
+  })
+}
+
 export default async function BlogDetail({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params
   const post = await getBlogPost(slug)
@@ -51,8 +81,25 @@ export default async function BlogDetail({ params }: { params: Promise<{ slug: s
   const relatedPosts = await getRelatedPosts(post.id)
   const readingTime = calculateReadingTime(post.content)
 
+  // Generate structured data for the article
+  const articleStructuredData = generateArticleStructuredData({
+    title: post.title,
+    description: post.excerpt,
+    image: post.coverImage,
+    publishedTime: new Date(post.publishedAt).toISOString(),
+    authorName: post.author,
+    url: `/blog/${post.slug}`,
+  })
+
   return (
     <>
+      {/* Add structured data */}
+      <Script
+        id="article-structured-data"
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: articleStructuredData }}
+      />
+
       <article className="py-12">
         <div className="container-custom max-w-4xl">
           {/* Back to blog */}

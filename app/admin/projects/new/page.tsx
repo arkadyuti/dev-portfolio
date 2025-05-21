@@ -43,7 +43,21 @@ const formSchema = z.object({
       })
     )
     .min(1, 'At least one tag is required'),
-  githubUrl: z.string().optional(),
+  githubUrl: z
+    .string()
+    .optional()
+    .transform((url) => {
+      if (!url) return url;
+      // Convert SSH URL to HTTPS URL if needed
+      if (url.startsWith('git@github.com:')) {
+        return url.replace('git@github.com:', 'https://github.com/');
+      }
+      // Ensure URL starts with https://
+      if (!url.startsWith('https://')) {
+        return `https://${url}`;
+      }
+      return url;
+    }),
   liveUrl: z.string().optional(),
   status: z.enum(['completed', 'in-progress', 'planned']),
   featured: z.boolean().default(false),

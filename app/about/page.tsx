@@ -4,6 +4,15 @@ import { Badge } from '@/components/ui/badge'
 import { Card, CardContent } from '@/components/ui/card'
 import { profile } from '@/data/profile-data'
 import Image from 'next/image'
+import { Metadata } from 'next'
+import { genPageMetadata, generatePersonStructuredData } from '../seo'
+import Script from 'next/script'
+
+export const metadata: Metadata = genPageMetadata({
+  title: 'About Me',
+  description: 'Learn more about me, my skills, and my experience as a Frontend Associate Architect',
+  keywords: 'frontend architect, about me, skills, experience, portfolio',
+})
 
 const AboutPage = () => {
   const socialLinks = [
@@ -52,8 +61,29 @@ const AboutPage = () => {
     }
   })
 
+  // Generate structured data for person
+  const personStructuredData = generatePersonStructuredData({
+    name: profile.name,
+    title: profile.title,
+    description: profile.bio,
+    image: profile.profileImage,
+    url: '/about',
+    sameAs: [
+      profile.socialLinks.github,
+      profile.socialLinks.linkedin,
+      profile.socialLinks.twitter,
+    ],
+  })
+
   return (
     <>
+      {/* Add structured data */}
+      <Script
+        id="person-structured-data"
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: personStructuredData }}
+      />
+      
       <section className="py-12 md:py-20">
         <div className="container-custom max-w-5xl">
           <div className="grid grid-cols-1 gap-12 lg:grid-cols-12">
@@ -147,4 +177,4 @@ const AboutPage = () => {
   )
 }
 
-export default AboutPage
+export default AboutPage 

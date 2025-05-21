@@ -83,7 +83,7 @@ const ProjectSchema = new Schema<ProjectDocument>(
     description: {
       type: String,
       required: [true, 'Please provide a description for this project'],
-      maxlength: [300, 'Description cannot be more than 300 characters'],
+      maxlength: [600, 'Description cannot be more than 600 characters'],
     },
     coverImage: {
       type: String,

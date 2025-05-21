@@ -32,15 +32,25 @@ export const metadata: Metadata = {
   metadataBase: new URL(siteMetadata.siteUrl),
   title: {
     default: siteMetadata.title,
-    template: `%s | ${siteMetadata.title}`,
+    template: `%s | ${siteMetadata.title.split('|')[0].trim()}`,
   },
   description: siteMetadata.description,
+  keywords: siteMetadata.keywords,
+  authors: [{ name: siteMetadata.author }],
+  creator: siteMetadata.author,
   openGraph: {
     title: siteMetadata.title,
     description: siteMetadata.description,
     url: './',
     siteName: siteMetadata.title,
-    images: [siteMetadata.socialBanner],
+    images: [
+      {
+        url: siteMetadata.socialBanner,
+        width: 1200,
+        height: 630,
+        alt: siteMetadata.title,
+      }
+    ],
     locale: 'en_US',
     type: 'website',
   },
@@ -65,7 +75,20 @@ export const metadata: Metadata = {
     title: siteMetadata.title,
     card: 'summary_large_image',
     images: [siteMetadata.socialBanner],
+    creator: '@' + siteMetadata.x.replace('https://twitter.com/', ''),
+    site: '@' + siteMetadata.x.replace('https://twitter.com/', ''),
+    description: siteMetadata.description,
   },
+  verification: {
+    google: '', // Add your Google verification ID if available
+    yandex: '', // Add your Yandex verification ID if available
+  },
+}
+
+export const viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  maximumScale: 5,
 }
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
@@ -95,6 +118,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         sizes="16x16"
         href={`${basePath}/static/favicons/favicon-16x16.png`}
       />
+      <link rel="manifest" href={`${basePath}/static/favicons/site.webmanifest`} />
       <meta name="msapplication-TileColor" content="#000000" />
       <meta name="theme-color" media="(prefers-color-scheme: light)" content="#fff" />
       <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#000" />
