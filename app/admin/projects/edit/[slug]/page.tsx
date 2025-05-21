@@ -1,4 +1,4 @@
 'use client'
-import EditAdminProjectForm from '../../new/page'
+import AdminProjectForm from '../../new/page'
 
-export default EditAdminProjectForm
+export default AdminProjectForm
