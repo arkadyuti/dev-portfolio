@@ -32,7 +32,7 @@ async function getBlogs(searchParams: { [key: string]: string | string[] | undef
   // Build query
   const query: {
     isDraft: boolean
-    tags?: string
+    'tags.name'?: string
     $or?: Array<{
       title?: { $regex: string; $options: string }
       excerpt?: { $regex: string; $options: string }
@@ -40,7 +40,7 @@ async function getBlogs(searchParams: { [key: string]: string | string[] | undef
     }>
   } = { isDraft: false }
   if (tag) {
-    query.tags = tag
+    query['tags.name'] = tag
   }
   if (search) {
     query.$or = [
@@ -51,6 +51,7 @@ async function getBlogs(searchParams: { [key: string]: string | string[] | undef
   }
 
   // Get total count
+  console.log('finding:: query', query) // Output: {"isDraft":false,"tags":"React"}
   const totalBlogs = await BlogModels.countDocuments(query)
 
   // Get paginated blogs
@@ -94,6 +95,8 @@ export default async function BlogPage({
   const { blogs, pagination } = await getBlogs(searchParams)
   const tags = await getTags()
 
+  console.log('finding:: blogs', blogs)
+
   return (
     <section className="py-12 md:py-20">
       <div className="container-custom">
@@ -123,10 +126,16 @@ export default async function BlogPage({
             {tags.map((tag) => (
               <Link
                 key={tag.id}
-                href={`/blog?tag=${tag.name}`}
-                className="cursor-pointer hover:bg-secondary/80"
+                href={`/blog${selectedTagId === tag.name ? '' : `?tag=${tag.name}`}${searchQuery ? `&q=${searchQuery}` : ''}`}
+                className="transition-colors"
               >
-                <Badge variant={selectedTagId === tag.name ? 'default' : 'outline'}>
+                <Badge 
+                  variant={selectedTagId === tag.name ? 'default' : 'outline'}
+                  className={selectedTagId === tag.name 
+                    ? 'hover:bg-primary/90' 
+                    : 'hover:bg-primary/10 hover:text-primary'
+                  }
+                >
                   {tag.name}
                 </Badge>
               </Link>
@@ -157,6 +166,7 @@ export default async function BlogPage({
                     width={400}
                     height={225}
                     className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+                    priority
                   />
                 </div>
                 <div className="p-6">
