@@ -5,8 +5,8 @@ import { deleteFile } from '@/lib/minio'
 // GET a single project by slug
 export async function GET(request: NextRequest, { params }: { params: { slug: string } }) {
   try {
-    const { slug } = params
-    const project = await ProjectModels.findOne({ slug }).lean()
+    const resolvedParams = await params
+    const project = await ProjectModels.findOne({ slug: resolvedParams.slug }).lean()
 
     if (!project) {
       return NextResponse.json({ success: false, message: 'Project not found' }, { status: 404 })
@@ -28,8 +28,8 @@ export async function GET(request: NextRequest, { params }: { params: { slug: st
 // DELETE a project by slug
 export async function DELETE(request: NextRequest, { params }: { params: { slug: string } }) {
   try {
-    const { slug } = params
-    const project = await ProjectModels.findOne({ slug })
+    const resolvedParams = await params
+    const project = await ProjectModels.findOne({ slug: resolvedParams.slug })
 
     if (!project) {
       return NextResponse.json({ success: false, message: 'Project not found' }, { status: 404 })
@@ -46,7 +46,7 @@ export async function DELETE(request: NextRequest, { params }: { params: { slug:
     }
 
     // Delete project from database
-    await ProjectModels.deleteOne({ slug })
+    await ProjectModels.deleteOne({ slug: resolvedParams.slug })
 
     return NextResponse.json({ success: true })
   } catch (error) {

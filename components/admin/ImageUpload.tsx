@@ -73,9 +73,9 @@ const ImageUpload: React.FC<ImageUploadProps> = ({
           <Image
             src={previewUrl}
             alt="Preview"
-            className="h-full w-full object-cover"
-            width={1286}
-            height={723}
+            fill
+            className="object-cover"
+            sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
           />
           <Button
             type="button"
