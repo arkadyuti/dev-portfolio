@@ -1,15 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server'
 import BlogModels, { transformToBlog } from 'models/blog'
 import { ZodError } from 'zod'
+import { deleteFile } from '@/lib/minio'
 
-export async function GET(request: NextRequest, context: { params: Promise<{ slug: string }> }) {
+export async function GET(request: NextRequest, context: { params: Promise<{ id: string }> }) {
   try {
-    const { slug: identifier } = await context.params
+    const { id } = await context.params
 
-    // Try to find the blog post by id or slug
-    const existingBlog = await BlogModels.findOne({
-      $or: [{ id: identifier }, { slug: identifier }],
-    })
+    // Find the blog post by id
+    const existingBlog = await BlogModels.findOne({ id })
 
     const transformedBlog = transformToBlog(existingBlog)
 
@@ -37,16 +36,31 @@ export async function GET(request: NextRequest, context: { params: Promise<{ slu
   }
 }
 
-export async function DELETE(request: NextRequest, context: { params: Promise<{ slug: string }> }) {
+export async function DELETE(request: NextRequest, context: { params: Promise<{ id: string }> }) {
   try {
-    const { slug: identifier } = await context.params
+    const { id } = await context.params
 
-    // Try to find and delete the blog post by id or slug
-    const deletedBlog = await BlogModels.findOneAndDelete({
-      $or: [{ id: identifier }, { slug: identifier }],
-    })
+    // Find the blog post before deleting to get the cover image key
+    const blog = await BlogModels.findOne({ id })
 
-    if (!deletedBlog) {
+    if (!blog) {
+      return NextResponse.json({ success: false, message: 'Blog not found' }, { status: 404 })
+    }
+
+    // Delete cover image if exists
+    if (blog.coverImageKey) {
+      try {
+        await deleteFile(process.env.MINIO_IMAGE_BUCKET!, blog.coverImageKey)
+      } catch (error) {
+        console.warn(`Failed to delete cover image: ${blog.coverImageKey}`, error)
+        // Continue execution even if delete fails
+      }
+    }
+
+    // Delete the blog post by id
+    const deletedBlog = await BlogModels.deleteOne({ id })
+
+    if (deletedBlog.deletedCount === 0) {
       return NextResponse.json({ success: false, message: 'Blog not found' }, { status: 404 })
     }
 

@@ -230,12 +230,12 @@ const AdminProjectPage: React.FC = () => {
                   </TableCell>
                   <TableCell className="space-x-2 text-right">
                     <Button variant="ghost" size="icon" asChild>
-                      <Link href={`/admin/projects/edit/${project.slug}`}>
+                      <Link href={`/admin/projects/edit/${project.id}`}>
                         <Edit className="h-4 w-4" />
                         <span className="sr-only">Edit</span>
                       </Link>
                     </Button>
-                    <Button variant="ghost" size="icon" onClick={() => handleDelete(project.slug)}>
+                    <Button variant="ghost" size="icon" onClick={() => handleDelete(project.id)}>
                       <Trash className="h-4 w-4" />
                       <span className="sr-only">Delete</span>
                     </Button>

@@ -218,7 +218,7 @@ const AdminBlogPage: React.FC = () => {
                   </TableCell>
                   <TableCell className="space-x-2 text-right">
                     <Button variant="ghost" size="icon" asChild>
-                      <Link href={`/admin/blogs/edit/${blog.slug}`}>
+                      <Link href={`/admin/blogs/edit/${blog.id}`}>
                         <Edit className="h-4 w-4" />
                         <span className="sr-only">Edit</span>
                       </Link>

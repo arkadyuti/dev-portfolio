@@ -31,7 +31,7 @@ export async function POST(request: NextRequest) {
     let oldCoverImageKey = ''
 
     if (projectId) {
-      existingProject = await ProjectModels.findOne({ slug: projectId })
+      existingProject = await ProjectModels.findOne({ id: projectId })
       if (!existingProject) {
         return NextResponse.json({ success: false, message: 'Project not found' }, { status: 404 })
       }
@@ -91,7 +91,7 @@ export async function POST(request: NextRequest) {
       const fileExtension = tempCoverImageKey.split('.').pop()
       // Add timestamp salt to prevent caching
       const timestamp = Date.now()
-      const finalFilename = `${savedProject.slug}_${timestamp}_cover-image.${fileExtension}`
+      const finalFilename = `${savedProject.id}_${timestamp}_cover-image.${fileExtension}`
 
       try {
         // Get the temporary file
