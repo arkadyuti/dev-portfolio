@@ -30,7 +30,7 @@ export async function POST(request: NextRequest) {
     let oldCoverImageKey = ''
 
     if (blogId) {
-      existingBlog = await BlogModels.findOne({ slug: blogId })
+      existingBlog = await BlogModels.findOne({ id: blogId })
       if (!existingBlog) {
         return NextResponse.json({ success: false, message: 'Blog not found' }, { status: 404 })
       }
@@ -90,7 +90,7 @@ export async function POST(request: NextRequest) {
       const fileExtension = tempCoverImageKey.split('.').pop()
       // Add timestamp salt to prevent caching
       const timestamp = Date.now()
-      const finalFilename = `${savedArticle.slug}_${timestamp}_cover-image.${fileExtension}`
+      const finalFilename = `${savedArticle.id}_${timestamp}_cover-image.${fileExtension}`
 
       try {
         // Get the temporary file

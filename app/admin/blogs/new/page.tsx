@@ -26,7 +26,6 @@ import { IBlog } from 'models/blog'
 // Form schema
 const formSchema = z.object({
   title: z.string().min(1, 'Title is required'),
-  slug: z.string().min(1, 'Slug is required'),
   author: z.string().min(1, 'Author is required'),
   date: z.string().min(1, 'Date is required'),
   excerpt: z.string().min(1, 'Excerpt is required'),
@@ -49,7 +48,7 @@ type FormValues = z.infer<typeof formSchema>
 // or /admin/blogs/new/page.tsx
 const AdminBlogForm: React.FC = () => {
   const params = useParams()
-  const id = params?.slug as string // For dynamic routes in Next.js
+  const id = params?.id as string // For dynamic routes in Next.js
   const router = useRouter()
   const [availableTags, setAvailableTags] = useState<Tag[]>([])
   const [isLoading, setIsLoading] = useState(true)
@@ -59,7 +58,6 @@ const AdminBlogForm: React.FC = () => {
     resolver: zodResolver(formSchema),
     defaultValues: {
       title: '',
-      slug: '',
       author: '',
       date: new Date().toISOString().split('T')[0],
       excerpt: '',
@@ -88,7 +86,7 @@ const AdminBlogForm: React.FC = () => {
 
         // If editing, fetch blog post
         if (id && id !== 'new') {
-          // Use the slug to fetch the blog post
+          // Use the ID to fetch the blog post
           const response = await fetch(`/api/blog/${id}`)
           const data = await response.json()
 
@@ -101,7 +99,6 @@ const AdminBlogForm: React.FC = () => {
             }))
             form.reset({
               title: post.title,
-              slug: post.slug,
               author: post.author,
               date: new Date(post.publishedAt).toISOString().split('T')[0],
               excerpt: post.excerpt,
@@ -191,22 +188,10 @@ const AdminBlogForm: React.FC = () => {
           ? `Blog post updated and ${statusMessage}`
           : `Blog post created and ${statusMessage}`
       )
-      // router.push('/admin/blogs')
+      router.push('/admin/blogs')
     } catch (error) {
       console.error('Error saving blog post:', error)
       toast.error(error instanceof Error ? error.message : 'Failed to save blog post')
-    }
-  }
-
-  // Generate slug from title
-  const generateSlug = () => {
-    const title = form.getValues('title')
-    if (title) {
-      const slug = title
-        .toLowerCase()
-        .replace(/[^a-z0-9]+/g, '-') // Replace any sequence of non-alphanumeric chars with a single dash
-        .replace(/^-|-$/g, '') // Remove leading and trailing dashes
-      form.setValue('slug', slug)
     }
   }
 
@@ -250,30 +235,6 @@ const AdminBlogForm: React.FC = () => {
                         <FormLabel>Title</FormLabel>
                         <FormControl>
                           <Input placeholder="Blog title" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <FormField
-                    control={form.control}
-                    name="slug"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>
-                          Slug
-                          <Button
-                            type="button"
-                            variant="link"
-                            className="ml-2 h-auto p-0 text-sm"
-                            onClick={generateSlug}
-                          >
-                            Generate from title
-                          </Button>
-                        </FormLabel>
-                        <FormControl>
-                          <Input placeholder="blog-post-slug" {...field} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>

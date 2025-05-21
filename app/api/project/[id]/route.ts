@@ -2,11 +2,11 @@ import { NextRequest, NextResponse } from 'next/server'
 import ProjectModels, { transformToProject } from 'models/project'
 import { deleteFile } from '@/lib/minio'
 
-// GET a single project by slug
-export async function GET(request: NextRequest, { params }: { params: { slug: string } }) {
+// GET a single project by ID
+export async function GET(request: NextRequest, { params }: { params: { id: string } }) {
   try {
     const resolvedParams = await params
-    const project = await ProjectModels.findOne({ slug: resolvedParams.slug }).lean()
+    const project = await ProjectModels.findOne({ id: resolvedParams.id }).lean()
 
     if (!project) {
       return NextResponse.json({ success: false, message: 'Project not found' }, { status: 404 })
@@ -25,11 +25,11 @@ export async function GET(request: NextRequest, { params }: { params: { slug: st
   }
 }
 
-// DELETE a project by slug
-export async function DELETE(request: NextRequest, { params }: { params: { slug: string } }) {
+// DELETE a project by ID
+export async function DELETE(request: NextRequest, { params }: { params: { id: string } }) {
   try {
     const resolvedParams = await params
-    const project = await ProjectModels.findOne({ slug: resolvedParams.slug })
+    const project = await ProjectModels.findOne({ id: resolvedParams.id })
 
     if (!project) {
       return NextResponse.json({ success: false, message: 'Project not found' }, { status: 404 })
@@ -46,7 +46,7 @@ export async function DELETE(request: NextRequest, { params }: { params: { slug:
     }
 
     // Delete project from database
-    await ProjectModels.deleteOne({ slug: resolvedParams.slug })
+    await ProjectModels.deleteOne({ id: resolvedParams.id })
 
     return NextResponse.json({ success: true })
   } catch (error) {

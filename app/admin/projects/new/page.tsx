@@ -33,9 +33,7 @@ import { IProject } from 'models/project'
 // Form schema
 const formSchema = z.object({
   title: z.string().min(1, 'Title is required'),
-  slug: z.string().min(1, 'Slug is required'),
   description: z.string().min(1, 'Description is required'),
-  featured: z.boolean().default(false),
   coverImage: z.union([z.instanceof(File), z.string().min(1, 'Cover image is required')]),
   tags: z
     .array(
@@ -47,14 +45,15 @@ const formSchema = z.object({
     .min(1, 'At least one tag is required'),
   githubUrl: z.string().optional(),
   liveUrl: z.string().optional(),
-  status: z.enum(['completed', 'in-progress', 'planned']).default('completed'),
+  status: z.enum(['completed', 'in-progress', 'planned']),
+  featured: z.boolean().default(false),
 })
 
 type FormValues = z.infer<typeof formSchema>
 
 const AdminProjectForm: React.FC = () => {
   const params = useParams()
-  const id = params?.slug as string // For dynamic routes in Next.js
+  const id = params?.id as string // For dynamic routes in Next.js
   const router = useRouter()
   const [availableTags, setAvailableTags] = useState<Tag[]>([])
   const [isLoading, setIsLoading] = useState(true)
@@ -64,7 +63,6 @@ const AdminProjectForm: React.FC = () => {
     resolver: zodResolver(formSchema),
     defaultValues: {
       title: '',
-      slug: '',
       description: '',
       featured: false,
       coverImage: '',
@@ -93,7 +91,7 @@ const AdminProjectForm: React.FC = () => {
 
         // If editing, fetch project
         if (id && id !== 'new') {
-          // Use the slug to fetch the project
+          // Use the id to fetch the project
           const response = await fetch(`/api/project/${id}`)
           const data = await response.json()
 
@@ -106,14 +104,13 @@ const AdminProjectForm: React.FC = () => {
             }))
             form.reset({
               title: project.title,
-              slug: project.slug,
               description: project.description,
               featured: project.featured || false,
               coverImage: project.coverImage,
               tags: validTags,
               githubUrl: project.githubUrl || '',
               liveUrl: project.liveUrl || '',
-              status: project.status || 'completed',
+              status: project.status,
             })
           } else {
             toast.error('Project not found')
@@ -201,18 +198,6 @@ const AdminProjectForm: React.FC = () => {
     }
   }
 
-  // Generate slug from title
-  const generateSlug = () => {
-    const title = form.getValues('title')
-    if (title) {
-      const slug = title
-        .toLowerCase()
-        .replace(/[^a-z0-9]+/g, '-') // Replace any sequence of non-alphanumeric chars with a single dash
-        .replace(/^-|-$/g, '') // Remove leading and trailing dashes
-      form.setValue('slug', slug)
-    }
-  }
-
   // Handle save as draft
   const handleSaveAsDraft = () => {
     const data = form.getValues()
@@ -260,23 +245,27 @@ const AdminProjectForm: React.FC = () => {
 
                   <FormField
                     control={form.control}
-                    name="slug"
+                    name="status"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>
-                          Slug
-                          <Button
-                            type="button"
-                            variant="link"
-                            className="ml-2 h-auto p-0 text-sm"
-                            onClick={generateSlug}
-                          >
-                            Generate from title
-                          </Button>
-                        </FormLabel>
-                        <FormControl>
-                          <Input placeholder="project-slug" {...field} />
-                        </FormControl>
+                        <FormLabel>Status</FormLabel>
+                        <Select
+                          value={field.value}
+                          onValueChange={(value) =>
+                            field.onChange(value as 'completed' | 'in-progress' | 'planned')
+                          }
+                        >
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Select project status" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            <SelectItem value="completed">Completed</SelectItem>
+                            <SelectItem value="in-progress">In Progress</SelectItem>
+                            <SelectItem value="planned">Planned</SelectItem>
+                          </SelectContent>
+                        </Select>
                         <FormMessage />
                       </FormItem>
                     )}
@@ -367,29 +356,6 @@ const AdminProjectForm: React.FC = () => {
                 />
 
                 <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-                  <FormField
-                    control={form.control}
-                    name="status"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Status</FormLabel>
-                        <Select onValueChange={field.onChange} defaultValue={field.value}>
-                          <FormControl>
-                            <SelectTrigger>
-                              <SelectValue placeholder="Select status" />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            <SelectItem value="completed">Completed</SelectItem>
-                            <SelectItem value="in-progress">In Progress</SelectItem>
-                            <SelectItem value="planned">Planned</SelectItem>
-                          </SelectContent>
-                        </Select>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
                   <FormField
                     control={form.control}
                     name="featured"
