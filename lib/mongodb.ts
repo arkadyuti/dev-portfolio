@@ -21,25 +21,42 @@ if (!cached) {
 }
 
 async function connectToDatabase() {
+  // If the connection is already established, reuse it
   if (cached.conn) {
     return cached.conn
   }
 
+  // If a connection is being established, wait for it
   if (!cached.promise) {
     const opts = {
       bufferCommands: false,
+      // Add connection pooling options
+      maxPoolSize: 10,
+      minPoolSize: 5,
+      socketTimeoutMS: 45000,
+      connectTimeoutMS: 10000,
+      serverSelectionTimeoutMS: 10000,
     }
 
-    logger.info('Creating new MongoDB connection')
+    // Only log new connection in non-production environments or if explicitly requested
+    const isProduction = process.env.NODE_ENV === 'production'
+    const isBuildTime = process.env.NEXT_PHASE === 'phase-production-build'
+
+    if (!isProduction || !isBuildTime) {
+      logger.info('Creating new MongoDB connection')
+    }
 
     cached.promise = mongoose
       .connect(MONGODB_URI, opts)
       .then((mongoose) => {
-        logger.info('MongoDB connected successfully')
+        if (!isProduction || !isBuildTime) {
+          logger.info('MongoDB connected successfully')
+        }
         return mongoose
       })
       .catch((error) => {
         logger.error('MongoDB connection failed', { error: error.message })
+        cached.promise = null
         throw error
       })
   }
@@ -55,29 +72,44 @@ async function connectToDatabase() {
   return cached.conn
 }
 
-// Add event listeners for MongoDB connection
-mongoose.connection.on('connected', () => {
-  logger.info('MongoDB connection established')
-})
+// Only register these event listeners once
+if (!global.mongoEventListenersRegistered) {
+  // Add event listeners for MongoDB connection
+  mongoose.connection.on('connected', () => {
+    const isProduction = process.env.NODE_ENV === 'production'
+    const isBuildTime = process.env.NEXT_PHASE === 'phase-production-build'
 
-mongoose.connection.on('error', (err) => {
-  logger.error('MongoDB connection error', { error: err.message })
-})
+    if (!isProduction || !isBuildTime) {
+      logger.info('MongoDB connection established')
+    }
+  })
 
-mongoose.connection.on('disconnected', () => {
-  logger.warn('MongoDB connection disconnected')
-})
+  mongoose.connection.on('error', (err) => {
+    logger.error('MongoDB connection error', { error: err.message })
+  })
 
-// Handle graceful shutdown
-process.on('SIGINT', async () => {
-  try {
-    await mongoose.connection.close()
-    logger.info('MongoDB connection closed due to application termination')
-    process.exit(0)
-  } catch (error) {
-    logger.error('Error closing MongoDB connection', { error })
-    process.exit(1)
-  }
-})
+  mongoose.connection.on('disconnected', () => {
+    const isProduction = process.env.NODE_ENV === 'production'
+    const isBuildTime = process.env.NEXT_PHASE === 'phase-production-build'
+
+    if (!isProduction || !isBuildTime) {
+      logger.warn('MongoDB connection disconnected')
+    }
+  })
+
+  // Handle graceful shutdown
+  process.on('SIGINT', async () => {
+    try {
+      await mongoose.connection.close()
+      logger.info('MongoDB connection closed due to application termination')
+      process.exit(0)
+    } catch (error) {
+      logger.error('Error closing MongoDB connection', { error })
+      process.exit(1)
+    }
+  })
+
+  global.mongoEventListenersRegistered = true
+}
 
 export default connectToDatabase
