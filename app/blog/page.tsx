@@ -15,8 +15,10 @@ import BlogModels, { transformToBlogs } from 'models/blog'
 import Image from 'next/image'
 
 // Server-side data fetching
-async function parseSearchParams(searchParams: { [key: string]: string | string[] | undefined }) {
-  const params = await Promise.resolve(searchParams)
+async function parseSearchParams(
+  searchParams: Promise<{ [key: string]: string | string[] | undefined }>
+) {
+  const params = await searchParams
   return {
     page: params.page ? parseInt(params.page as string) : 1,
     tag: params.tag ? (params.tag as string) : undefined,
@@ -24,7 +26,7 @@ async function parseSearchParams(searchParams: { [key: string]: string | string[
   }
 }
 
-async function getBlogs(searchParams: { [key: string]: string | string[] | undefined }) {
+async function getBlogs(searchParams: Promise<{ [key: string]: string | string[] | undefined }>) {
   const { page, tag, search } = await parseSearchParams(searchParams)
   const limit = 6
   const skip = (page - 1) * limit
@@ -85,7 +87,7 @@ async function getTags() {
 export default async function BlogPage({
   searchParams,
 }: {
-  searchParams: { [key: string]: string | string[] | undefined }
+  searchParams: Promise<{ [key: string]: string | string[] | undefined }>
 }) {
   const {
     page: currentPage,
