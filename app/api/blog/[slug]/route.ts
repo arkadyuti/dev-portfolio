@@ -5,15 +5,12 @@ import { ZodError } from 'zod'
 export async function GET(request: NextRequest, context: { params: Promise<{ slug: string }> }) {
   try {
     const { slug: identifier } = await context.params
-    
+
     // Try to find the blog post by id or slug
     const existingBlog = await BlogModels.findOne({
-      $or: [
-        { id: identifier },
-        { slug: identifier }
-      ]
+      $or: [{ id: identifier }, { slug: identifier }],
     })
-    
+
     const transformedBlog = transformToBlog(existingBlog)
 
     if (!transformedBlog) {

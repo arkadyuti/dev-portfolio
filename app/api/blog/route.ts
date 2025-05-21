@@ -28,7 +28,7 @@ export async function POST(request: NextRequest) {
     // For existing blog, fetch the current data to handle old image cleanup
     let existingBlog = null
     let oldCoverImageKey = ''
-    
+
     if (blogId) {
       existingBlog = await BlogModels.findOne({ slug: blogId })
       if (!existingBlog) {

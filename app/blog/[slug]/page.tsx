@@ -22,15 +22,15 @@ async function getBlogPost(slug: string): Promise<IBlog | null> {
 
 async function getRelatedPosts(currentPostId: string): Promise<IBlog[]> {
   try {
-    const posts = await BlogModels.find({ 
+    const posts = await BlogModels.find({
       id: { $ne: currentPostId },
-      isDraft: false 
+      isDraft: false,
     })
       .sort({ publishedAt: -1 })
       .limit(2)
       .lean()
-    
-    return posts.map(post => transformToBlog(post)).filter((post): post is IBlog => post !== null)
+
+    return posts.map((post) => transformToBlog(post)).filter((post): post is IBlog => post !== null)
   } catch (error) {
     console.error('Error fetching related posts:', error)
     return []
@@ -45,7 +45,7 @@ async function parseParams(params: { slug: string }) {
 export default async function BlogDetail({ params }: { params: { slug: string } }) {
   const slug = await parseParams(params)
   const post = await getBlogPost(slug)
-  
+
   if (!post) {
     notFound()
   }
@@ -106,11 +106,11 @@ export default async function BlogDetail({ params }: { params: { slug: string } 
 
           {/* Cover Image */}
           <div className="mb-10 overflow-hidden rounded-xl">
-            <Image 
-              width={848} 
-              height={560} 
-              src={post.coverImage} 
-              alt={post.title} 
+            <Image
+              width={848}
+              height={560}
+              src={post.coverImage}
+              alt={post.title}
               className="h-auto w-full object-cover"
               priority
             />
@@ -118,9 +118,7 @@ export default async function BlogDetail({ params }: { params: { slug: string } 
 
           {/* Content */}
           <div className="prose prose-lg max-w-none">
-            <p className="mb-4">
-              {post.content}
-          </p>
+            <p className="mb-4">{post.content}</p>
           </div>
 
           {/* Share buttons */}

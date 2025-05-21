@@ -12,6 +12,7 @@ import {
 import { Search } from 'lucide-react'
 import Link from '@/components/ui/Link'
 import BlogModels, { transformToBlogs } from 'models/blog'
+import Image from 'next/image'
 
 // Server-side data fetching
 async function parseSearchParams(searchParams: { [key: string]: string | string[] | undefined }) {
@@ -19,7 +20,7 @@ async function parseSearchParams(searchParams: { [key: string]: string | string[
   return {
     page: params.page ? parseInt(params.page as string) : 1,
     tag: params.tag ? (params.tag as string) : undefined,
-    search: params.q ? (params.q as string) : undefined
+    search: params.q ? (params.q as string) : undefined,
   }
 }
 
@@ -29,7 +30,15 @@ async function getBlogs(searchParams: { [key: string]: string | string[] | undef
   const skip = (page - 1) * limit
 
   // Build query
-  const query: any = { isDraft: false }
+  const query: {
+    isDraft: boolean
+    tags?: string
+    $or?: Array<{
+      title?: { $regex: string; $options: string }
+      excerpt?: { $regex: string; $options: string }
+      'tags.name'?: { $regex: string; $options: string }
+    }>
+  } = { isDraft: false }
   if (tag) {
     query.tags = tag
   }
@@ -37,7 +46,7 @@ async function getBlogs(searchParams: { [key: string]: string | string[] | undef
     query.$or = [
       { title: { $regex: search, $options: 'i' } },
       { excerpt: { $regex: search, $options: 'i' } },
-      { 'tags.name': { $regex: search, $options: 'i' } }
+      { 'tags.name': { $regex: search, $options: 'i' } },
     ]
   }
 
@@ -57,8 +66,8 @@ async function getBlogs(searchParams: { [key: string]: string | string[] | undef
       total: totalBlogs,
       page,
       limit,
-      totalPages: Math.ceil(totalBlogs / limit)
-    }
+      totalPages: Math.ceil(totalBlogs / limit),
+    },
   }
 }
 
@@ -66,8 +75,8 @@ async function getBlogs(searchParams: { [key: string]: string | string[] | undef
 async function getTags() {
   const blogs = await BlogModels.find({ isDraft: false }).select('tags').lean()
   const tags = new Set<string>()
-  blogs.forEach(blog => {
-    blog.tags.forEach((tag: any) => tags.add(tag.name))
+  blogs.forEach((blog) => {
+    blog.tags.forEach((tag: { id?: string; name: string }) => tags.add(tag.name))
   })
   return Array.from(tags).map((name, index) => ({ id: String(index + 1), name }))
 }
@@ -77,7 +86,11 @@ export default async function BlogPage({
 }: {
   searchParams: { [key: string]: string | string[] | undefined }
 }) {
-  const { page: currentPage, tag: selectedTagId, search: searchQuery } = await parseSearchParams(searchParams)
+  const {
+    page: currentPage,
+    tag: selectedTagId,
+    search: searchQuery,
+  } = await parseSearchParams(searchParams)
   const { blogs, pagination } = await getBlogs(searchParams)
   const tags = await getTags()
 
@@ -113,9 +126,7 @@ export default async function BlogPage({
                 href={`/blog?tag=${tag.name}`}
                 className="cursor-pointer hover:bg-secondary/80"
               >
-                <Badge
-                  variant={selectedTagId === tag.name ? 'default' : 'outline'}
-                >
+                <Badge variant={selectedTagId === tag.name ? 'default' : 'outline'}>
                   {tag.name}
                 </Badge>
               </Link>
@@ -140,9 +151,11 @@ export default async function BlogPage({
             {blogs.map((post) => (
               <Link key={post.id} href={`/blog/${post.slug}`} className="blog-card group block">
                 <div className="aspect-video overflow-hidden">
-                  <img
+                  <Image
                     src={post.coverImage}
                     alt={post.title}
+                    width={400}
+                    height={225}
                     className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
                   />
                 </div>
