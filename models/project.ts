@@ -45,7 +45,7 @@ export const transformToType = <T>(
   if (!doc) return null
 
   // Handle both Mongoose documents and plain objects
-  const data = 'toObject' in doc ? doc.toObject() : doc
+  const data = 'toObject' in doc ? (doc as Document).toObject() : doc
   try {
     return schema.parse(data)
   } catch (error) {
