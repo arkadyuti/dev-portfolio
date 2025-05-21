@@ -57,6 +57,7 @@ const AdminProjectForm: React.FC = () => {
   const router = useRouter()
   const [availableTags, setAvailableTags] = useState<Tag[]>([])
   const [isLoading, setIsLoading] = useState(true)
+  const [isSubmitting, setIsSubmitting] = useState(false)
 
   // Initialize form with default values or existing project data
   const form = useForm<FormValues>({
@@ -145,6 +146,7 @@ const AdminProjectForm: React.FC = () => {
   // Handle form submission
   const onSubmit = async (data: FormValues, isDraft: boolean = false) => {
     try {
+      setIsSubmitting(true)
       // Create FormData object
       const formData = new FormData()
 
@@ -195,6 +197,8 @@ const AdminProjectForm: React.FC = () => {
     } catch (error) {
       console.error('Error saving project:', error)
       toast.error(error instanceof Error ? error.message : 'Failed to save project')
+    } finally {
+      setIsSubmitting(false)
     }
   }
 
@@ -377,14 +381,20 @@ const AdminProjectForm: React.FC = () => {
                     type="button"
                     variant="outline"
                     onClick={() => router.push('/admin/projects')}
+                    disabled={isSubmitting}
                   >
                     Cancel
                   </Button>
-                  <Button type="button" variant="secondary" onClick={handleSaveAsDraft}>
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    onClick={handleSaveAsDraft}
+                    disabled={isSubmitting}
+                  >
                     <FileText className="mr-2 h-4 w-4" />
                     Save as Draft
                   </Button>
-                  <Button type="submit">
+                  <Button type="submit" disabled={isSubmitting}>
                     <Save className="mr-2 h-4 w-4" />
                     {id && id !== 'new' ? 'Update' : 'Publish'} Project
                   </Button>

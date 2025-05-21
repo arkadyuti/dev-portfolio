@@ -52,6 +52,7 @@ const AdminBlogForm: React.FC = () => {
   const router = useRouter()
   const [availableTags, setAvailableTags] = useState<Tag[]>([])
   const [isLoading, setIsLoading] = useState(true)
+  const [isSubmitting, setIsSubmitting] = useState(false)
 
   // Initialize form with default values or existing blog data
   const form = useForm<FormValues>({
@@ -140,6 +141,7 @@ const AdminBlogForm: React.FC = () => {
   // Handle form submission
   const onSubmit = async (data: FormValues, isDraft: boolean = false) => {
     try {
+      setIsSubmitting(true)
       // Create FormData object
       const formData = new FormData()
 
@@ -192,6 +194,8 @@ const AdminBlogForm: React.FC = () => {
     } catch (error) {
       console.error('Error saving blog post:', error)
       toast.error(error instanceof Error ? error.message : 'Failed to save blog post')
+    } finally {
+      setIsSubmitting(false)
     }
   }
 
@@ -364,14 +368,20 @@ const AdminBlogForm: React.FC = () => {
                     type="button"
                     variant="outline"
                     onClick={() => router.push('/admin/blogs')}
+                    disabled={isSubmitting}
                   >
                     Cancel
                   </Button>
-                  <Button type="button" variant="secondary" onClick={handleSaveAsDraft}>
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    onClick={handleSaveAsDraft}
+                    disabled={isSubmitting}
+                  >
                     <FileText className="mr-2 h-4 w-4" />
                     Save as Draft
                   </Button>
-                  <Button type="submit">
+                  <Button type="submit" disabled={isSubmitting}>
                     <Save className="mr-2 h-4 w-4" />
                     {id && id !== 'new' ? 'Update' : 'Publish'} Blog Post
                   </Button>
