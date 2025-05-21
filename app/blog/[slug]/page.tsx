@@ -37,6 +37,9 @@ async function getRelatedPosts(currentPostId: string): Promise<IBlog[]> {
   }
 }
 
+// Force dynamic rendering
+export const dynamic = 'force-dynamic'
+
 export default async function BlogDetail({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params
   const post = await getBlogPost(slug)

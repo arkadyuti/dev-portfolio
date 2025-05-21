@@ -3,6 +3,9 @@ import BlogModels, { transformToBlogs } from '@/models/blog'
 import ProjectModels, { transformToProjects } from '@/models/project'
 import SearchForm from './SearchForm'
 
+// Force dynamic rendering
+export const dynamic = 'force-dynamic'
+
 // Server component that performs initial search based on URL params
 export default async function SearchPage({
   searchParams,

@@ -14,6 +14,9 @@ import Link from '@/components/ui/Link'
 import BlogModels, { transformToBlogs } from 'models/blog'
 import Image from 'next/image'
 
+// Force dynamic rendering
+export const dynamic = 'force-dynamic'
+
 // Server-side data fetching
 async function parseSearchParams(
   searchParams: Promise<{ [key: string]: string | string[] | undefined }>

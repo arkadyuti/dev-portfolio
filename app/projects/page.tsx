@@ -4,9 +4,16 @@ import { Button } from '@/components/ui/button'
 import Image from 'next/image'
 import ProjectModels, { transformToProjects } from 'models/project'
 import { Tag } from '@/components/admin/SearchableTagSelect'
+import connectToDatabase from '@/lib/mongodb'
+
+// Force dynamic rendering
+export const dynamic = 'force-dynamic'
 
 // Server-side data fetching
 async function getProjects() {
+  // Connect to database first
+  await connectToDatabase()
+
   // Get projects from database (excluding drafts)
   const projects = await ProjectModels.find({ isDraft: false })
     .sort({ featured: -1, createdAt: -1 })
