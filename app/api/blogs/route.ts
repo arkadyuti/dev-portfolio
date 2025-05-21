@@ -12,10 +12,10 @@ export async function GET(request: NextRequest) {
 
     // Get total count of blogs
     const totalBlogs = await BlogModels.countDocuments()
-    
+
     // Get paginated blogs sorted by publishedAt
     const mongoQuery: { isDraft?: boolean } = {}
-    if (fetchAll === "") {
+    if (fetchAll === '') {
       mongoQuery.isDraft = false
     }
     const blogs = await BlogModels.find(mongoQuery)

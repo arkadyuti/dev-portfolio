@@ -84,12 +84,13 @@ const AboutPage = () => {
             <div className="order-1 lg:order-2 lg:col-span-4">
               <div className="sticky top-24">
                 <div className="mb-6 overflow-hidden rounded-xl">
-                  <img
+                  <Image
                     src={profile.profileImage}
                     alt={profile.name}
                     className="h-auto w-full object-cover"
-                    width={293}
-                    height={195}
+                    width={400}
+                    height={400}
+                    priority
                   />
                 </div>
 

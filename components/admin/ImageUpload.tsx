@@ -70,7 +70,13 @@ const ImageUpload: React.FC<ImageUploadProps> = ({
 
       {previewUrl ? (
         <div className="relative aspect-video overflow-hidden rounded-md bg-muted">
-          <Image src={previewUrl} alt="Preview" className="h-full w-full object-cover" width={1286} height={723} />
+          <Image
+            src={previewUrl}
+            alt="Preview"
+            className="h-full w-full object-cover"
+            width={1286}
+            height={723}
+          />
           <Button
             type="button"
             variant="secondary"

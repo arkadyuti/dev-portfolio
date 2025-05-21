@@ -79,7 +79,7 @@ const AdminBlogForm: React.FC = () => {
         const tagsData = await tagsResponse.json()
         if (tagsData.success) {
           // Ensure tags have required properties
-          const validTags: Tag[] = tagsData.data.map((tag: any) => ({
+          const validTags: Tag[] = tagsData.data.map((tag: { id?: string; name: string }) => ({
             id: tag.id || `tag-${Date.now()}-${Math.random()}`,
             name: tag.name || 'Untitled Tag',
           }))
@@ -91,11 +91,11 @@ const AdminBlogForm: React.FC = () => {
           // Use the slug to fetch the blog post
           const response = await fetch(`/api/blog/${id}`)
           const data = await response.json()
-          
+
           if (data.success) {
             const post: IBlog = data.data
             // Ensure tags have required properties
-            const validTags: Tag[] = post.tags.map((tag: any) => ({
+            const validTags: Tag[] = post.tags.map((tag: { id?: string; name: string }) => ({
               id: tag.id || `tag-${Date.now()}-${Math.random()}`,
               name: tag.name || 'Untitled Tag',
             }))
@@ -150,7 +150,7 @@ const AdminBlogForm: React.FC = () => {
       Object.entries(data).forEach(([key, value]) => {
         if (key === 'tags') {
           // Handle tags array - ensure each tag has id and name
-          const validTags = (value as Tag[]).map(tag => ({
+          const validTags = (value as Tag[]).map((tag) => ({
             id: tag.id,
             name: tag.name,
           }))
@@ -167,7 +167,7 @@ const AdminBlogForm: React.FC = () => {
         }
       })
 
-      console.log("finding:: data:", data)
+      console.log('finding:: data:', data)
 
       // Add draft status
       formData.append('isDraft', String(isDraft))
@@ -399,7 +399,11 @@ const AdminBlogForm: React.FC = () => {
                 />
 
                 <div className="flex justify-end gap-3">
-                  <Button type="button" variant="outline" onClick={() => router.push('/admin/blogs')}>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => router.push('/admin/blogs')}
+                  >
                     Cancel
                   </Button>
                   <Button type="button" variant="secondary" onClick={handleSaveAsDraft}>

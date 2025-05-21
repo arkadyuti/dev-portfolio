@@ -41,11 +41,11 @@ const AdminBlogPage: React.FC = () => {
     try {
       const response = await fetch('/api/blogs?fetchAll=true')
       const data = await response.json()
-      
+
       if (data.success) {
         const blogsWithStatus = data.data.map((blog: IBlog) => ({
           ...blog,
-          status: blog.isDraft ? 'draft' : 'published'
+          status: blog.isDraft ? 'draft' : 'published',
         }))
         setBlogs(blogsWithStatus)
       } else {
@@ -75,7 +75,7 @@ const AdminBlogPage: React.FC = () => {
     .filter((blog) => blog.title.toLowerCase().includes(searchQuery.toLowerCase()))
     .sort((a, b) => {
       let comparison = 0
-      
+
       switch (sortField) {
         case 'publishedAt':
           comparison = a.publishedAt - b.publishedAt
@@ -87,7 +87,7 @@ const AdminBlogPage: React.FC = () => {
           comparison = (a.featured ? 1 : 0) - (b.featured ? 1 : 0)
           break
       }
-      
+
       return sortOrder === 'asc' ? comparison : -comparison
     })
 
@@ -148,8 +148,8 @@ const AdminBlogPage: React.FC = () => {
           <TableHeader>
             <TableRow>
               <TableHead className="w-[250px]">Title</TableHead>
-              <TableHead 
-                className="hidden md:table-cell cursor-pointer"
+              <TableHead
+                className="hidden cursor-pointer md:table-cell"
                 onClick={() => handleSort('publishedAt')}
               >
                 <div className="flex items-center">
@@ -157,8 +157,8 @@ const AdminBlogPage: React.FC = () => {
                   <ArrowUpDown className="ml-2 h-4 w-4" />
                 </div>
               </TableHead>
-              <TableHead 
-                className="hidden md:table-cell cursor-pointer"
+              <TableHead
+                className="hidden cursor-pointer md:table-cell"
                 onClick={() => handleSort('status')}
               >
                 <div className="flex items-center">
@@ -166,8 +166,8 @@ const AdminBlogPage: React.FC = () => {
                   <ArrowUpDown className="ml-2 h-4 w-4" />
                 </div>
               </TableHead>
-              <TableHead 
-                className="hidden md:table-cell cursor-pointer"
+              <TableHead
+                className="hidden cursor-pointer md:table-cell"
                 onClick={() => handleSort('featured')}
               >
                 <div className="flex items-center">
