@@ -17,6 +17,16 @@ jobs:
           node-version: '18'
           cache: 'yarn'
 
+      - name: Create .env file
+        run: |
+          echo "Creating .env file with secrets..."
+          echo "MONGODB_URI=${{ secrets.MINIO_ENDPOINT }}" > .env
+          echo "ANOTHER_VARIABLE=${{ secrets.MINIO_IMAGE_BUCKET }}" >> .env
+          echo "ANOTHER_VARIABLE=${{ secrets.MINIO_KEY }}" >> .env
+          echo "ANOTHER_VARIABLE=${{ secrets.MINIO_PORT }}" >> .env
+          echo "ANOTHER_VARIABLE=${{ secrets.MINIO_SECRET }}" >> .env
+          echo "ANOTHER_VARIABLE=${{ secrets.MONGODB_URI }}" >> .env
+
       - name: Install dependencies
         run: yarn install --frozen-lockfile
 
