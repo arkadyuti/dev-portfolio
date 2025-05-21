@@ -4,8 +4,13 @@ import ProjectModels, { transformToProjects } from '@/models/project'
 import SearchForm from './SearchForm'
 
 // Server component that performs initial search based on URL params
-export default async function SearchPage({ searchParams }: { searchParams: { q?: string } }) {
-  const searchQuery = searchParams.q || ''
+export default async function SearchPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ q?: string }>
+}) {
+  const params = await searchParams
+  const searchQuery = params.q || ''
 
   // Initialize with empty results
   let initialResults = { blogs: [], projects: [] }

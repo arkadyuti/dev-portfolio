@@ -24,6 +24,63 @@ export default async function PageWithSearch({
 }
 ```
 
+### Common Next.js 15 Build Errors
+
+#### 1. SearchParams Type Error
+
+**Error:**
+
+```
+Type '{ searchParams: { q?: string; }; }' does not satisfy the constraint 'PageProps'.
+Types of property 'searchParams' are incompatible.
+Type '{ q?: string; }' is missing the following properties from type 'Promise<any>': then, catch, finally, [Symbol.toStringTag]
+```
+
+**Solution:**
+Update the page component to handle searchParams as a Promise:
+
+```typescript
+// Incorrect
+export default async function Page({ searchParams }: { searchParams: { q?: string } }) {
+  const searchQuery = searchParams.q || ''
+  // ...
+}
+
+// Correct
+export default async function Page({ searchParams }: { searchParams: Promise<{ q?: string }> }) {
+  const params = await searchParams
+  const searchQuery = params.q || ''
+  // ...
+}
+```
+
+#### 2. Params Type Error
+
+**Error:**
+
+```
+Type '{ params: { slug: string; }; }' does not satisfy the constraint 'PageProps'.
+Types of property 'params' are incompatible.
+Type '{ slug: string; }' is missing the following properties from type 'Promise<any>': then, catch, finally, [Symbol.toStringTag]
+```
+
+**Solution:**
+Update the dynamic route page component to handle params as a Promise:
+
+```typescript
+// Incorrect
+export default async function Page({ params }: { params: { slug: string } }) {
+  const { slug } = params
+  // ...
+}
+
+// Correct
+export default async function Page({ params }: { params: Promise<{ slug: string }> }) {
+  const { slug } = await params
+  // ...
+}
+```
+
 ## Project Overview
 
 This is a Next.js-based portfolio website that includes blog functionality, project showcase, and admin features. The project uses TypeScript, Tailwind CSS for styling, and follows modern web development practices.
