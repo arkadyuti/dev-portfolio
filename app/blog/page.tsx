@@ -53,7 +53,6 @@ async function getBlogs(searchParams: Promise<{ [key: string]: string | string[]
   }
 
   // Get total count
-  console.log('finding:: query', query) // Output: {"isDraft":false,"tags":"React"}
   const totalBlogs = await BlogModels.countDocuments(query)
 
   // Get paginated blogs
@@ -96,8 +95,6 @@ export default async function BlogPage({
   } = await parseSearchParams(searchParams)
   const { blogs, pagination } = await getBlogs(searchParams)
   const tags = await getTags()
-
-  console.log('finding:: blogs', blogs)
 
   return (
     <section className="py-12 md:py-20">
