@@ -2,10 +2,13 @@
 import { Github, Linkedin, Mail, Twitter } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { toast } from '@/hooks/use-toast'
+import { toast } from '@/components/ui/sonner'
 import Link from '@/components/ui/Link'
+import { useState } from 'react'
 
 export function Footer() {
+  const [isLoading, setIsLoading] = useState(false)
+
   const socialLinks = [
     { name: 'Github', href: 'https://github.com', icon: Github },
     { name: 'LinkedIn', href: 'https://linkedin.com', icon: Linkedin },
@@ -13,17 +16,42 @@ export function Footer() {
     { name: 'Email', href: 'mailto:hello@example.com', icon: Mail },
   ]
 
-  const handleNewsletterSubmit = (e: React.FormEvent) => {
+  const handleNewsletterSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     const form = e.target as HTMLFormElement
-    const email = (form.elements.namedItem('email') as HTMLInputElement).value
+    const emailInput = form.elements.namedItem('email') as HTMLInputElement
+    const email = emailInput.value
 
-    toast({
-      title: 'Newsletter Subscription',
-      description: `Thank you for subscribing with ${email}. You'll receive updates soon!`,
-    })
+    if (!email) {
+      toast.error('Please enter your email address')
+      return
+    }
 
-    form.reset()
+    setIsLoading(true)
+
+    try {
+      const response = await fetch('/api/newsletter', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email }),
+      })
+
+      const data = await response.json()
+
+      if (data.success) {
+        toast.success(data.message || 'Successfully subscribed to the newsletter')
+        form.reset()
+      } else {
+        toast.error(data.message || 'Failed to subscribe to the newsletter')
+      }
+    } catch (error) {
+      console.error('Error subscribing to newsletter:', error)
+      toast.error('Failed to subscribe to the newsletter')
+    } finally {
+      setIsLoading(false)
+    }
   }
 
   return (
@@ -70,8 +98,11 @@ export function Footer() {
                   placeholder="your@email.com"
                   required
                   className="flex-1"
+                  disabled={isLoading}
                 />
-                <Button type="submit">Subscribe</Button>
+                <Button type="submit" disabled={isLoading}>
+                  {isLoading ? 'Subscribing...' : 'Subscribe'}
+                </Button>
               </div>
             </form>
           </div>

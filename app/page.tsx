@@ -3,14 +3,51 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { profile } from '@/data/profile-data'
-import { blogPosts } from '@/data/blog-data'
-import { getFeaturedProjects } from '@/data/project-data'
 import Link from '@/components/ui/Link'
 import Image from 'next/image'
+import ProjectModels, { transformToProjects } from 'models/project'
+import BlogModels, { transformToBlogs } from 'models/blog'
+import connectToDatabase from '@/lib/mongodb'
 
-export default function Home() {
-  const featuredProjects = getFeaturedProjects()
-  const recentPosts = blogPosts.slice(0, 3)
+// Explicitly mark page as server component
+export const dynamic = 'force-dynamic'
+
+// Server-side data fetching
+async function getFeaturedProjects() {
+  try {
+    await connectToDatabase()
+    const projects = await ProjectModels.find({ featured: true, isDraft: false })
+      .sort({ createdAt: -1 })
+      .limit(4)
+      .lean()
+
+    return transformToProjects(projects)
+  } catch (error) {
+    console.error('Error fetching featured projects:', error)
+    return []
+  }
+}
+
+// Server-side data fetching for recent blog posts
+async function getRecentBlogPosts() {
+  try {
+    await connectToDatabase()
+    const blogs = await BlogModels.find({ isDraft: false })
+      .sort({ publishedAt: -1 })
+      .limit(3)
+      .lean()
+
+    return transformToBlogs(blogs)
+  } catch (error) {
+    console.error('Error fetching recent blog posts:', error)
+    return []
+  }
+}
+
+export default async function Home() {
+  const featuredProjects = await getFeaturedProjects()
+  const recentPosts = await getRecentBlogPosts()
+
   return (
     <>
       <section className="py-20 md:py-28">
@@ -99,7 +136,7 @@ export default function Home() {
             {featuredProjects.map((project) => (
               <Card key={project.id} className="flex h-full flex-col overflow-hidden">
                 <Image
-                  src={project.imageUrl}
+                  src={project.coverImage}
                   alt={project.title}
                   width={800}
                   height={400}
@@ -109,26 +146,26 @@ export default function Home() {
                   <h3 className="mb-2 text-xl font-bold">{project.title}</h3>
                   <p className="mb-4 flex-grow text-muted-foreground">{project.description}</p>
                   <div className="mb-4 flex flex-wrap gap-2">
-                    {project.technologies.slice(0, 3).map((tech, idx) => (
-                      <Badge key={idx} variant="secondary">
-                        {tech}
+                    {project.tags.slice(0, 3).map((tag) => (
+                      <Badge key={tag.id} variant="secondary">
+                        {tag.name}
                       </Badge>
                     ))}
-                    {project.technologies.length > 3 && (
-                      <Badge variant="outline">+{project.technologies.length - 3}</Badge>
+                    {project.tags.length > 3 && (
+                      <Badge variant="outline">+{project.tags.length - 3}</Badge>
                     )}
                   </div>
                   <div className="flex gap-3">
-                    {project.demoUrl && (
+                    {project.liveUrl && (
                       <Button size="sm" asChild>
-                        <a href={project.demoUrl} target="_blank" rel="noopener noreferrer">
+                        <a href={project.liveUrl} target="_blank" rel="noopener noreferrer">
                           Live Demo
                         </a>
                       </Button>
                     )}
-                    {project.sourceUrl && (
+                    {project.githubUrl && (
                       <Button size="sm" variant="outline" asChild>
-                        <a href={project.sourceUrl} target="_blank" rel="noopener noreferrer">
+                        <a href={project.githubUrl} target="_blank" rel="noopener noreferrer">
                           Source Code
                         </a>
                       </Button>
@@ -166,7 +203,7 @@ export default function Home() {
                 </div>
                 <div className="p-6">
                   <p className="mb-2 text-sm text-muted-foreground">
-                    {new Date(post.date).toLocaleDateString('en-US', {
+                    {new Date(post.publishedAt).toLocaleDateString('en-US', {
                       year: 'numeric',
                       month: 'long',
                       day: 'numeric',

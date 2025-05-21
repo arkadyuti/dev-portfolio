@@ -8,7 +8,7 @@
     "build": "cross-env INIT_CWD=$PWD NEXT_DISABLE_ESLINT=1 NEXT_DISABLE_TYPE_CHECKS=1 next build --no-lint && cross-env NODE_OPTIONS='--experimental-json-modules' node ./scripts/postbuild.mjs",
     "serve": "next start",
     "analyze": "cross-env ANALYZE=true next build",
-    "lint": "next lint --fix --dir pages --dir app --dir components --dir lib --dir layouts --dir scripts",
+    "lint": "next lint --fix --dir pages --dir app --dir components --dir lib --dir layouts --dir scripts --dir context --dir models --dir utils --dir hooks --dir types",
     "prepare": "husky"
   },
   "dependencies": {
