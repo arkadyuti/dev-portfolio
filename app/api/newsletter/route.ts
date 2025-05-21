@@ -28,6 +28,7 @@ export async function POST(request: NextRequest) {
 
     // Create new newsletter subscription
     const newsletterSubscription = new NewsletterModel({
+      id: uuidv4(),
       email,
     })
 

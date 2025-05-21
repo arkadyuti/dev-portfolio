@@ -14,7 +14,7 @@ export const newsletterSchema = z.object({
 export type INewsletter = z.infer<typeof newsletterSchema>
 
 // Type for Mongoose document with INewsletter
-type NewsletterDocument = Document & Omit<INewsletter, 'id'> & { _id: mongoose.Types.ObjectId }
+type NewsletterDocument = Document & INewsletter
 
 // Type for Mongoose model
 type NewsletterModel = Model<NewsletterDocument>
@@ -25,7 +25,7 @@ export const transformToNewsletter = (doc: NewsletterDocument | null): INewslett
 
   try {
     const newsletter = {
-      id: uuidv4(),
+      id: doc.id,
       email: doc.email,
       createdAt: doc.createdAt,
       updatedAt: doc.updatedAt,
@@ -47,6 +47,12 @@ export const transformToNewsletters = (docs: NewsletterDocument[]): INewsletter[
 
 const NewsletterSchema = new Schema<NewsletterDocument>(
   {
+    id: {
+      type: String,
+      required: true,
+      default: () => uuidv4(),
+      index: true,
+    },
     email: {
       type: String,
       required: [true, 'Please provide an email address'],
@@ -59,6 +65,14 @@ const NewsletterSchema = new Schema<NewsletterDocument>(
     timestamps: true,
   }
 )
+
+// Add a pre-save middleware to ensure id is set
+NewsletterSchema.pre('save', function (next) {
+  if (!this.id) {
+    this.id = uuidv4()
+  }
+  next()
+})
 
 // Check if the model exists before creating a new one
 // This prevents "Cannot overwrite model once compiled" errors
