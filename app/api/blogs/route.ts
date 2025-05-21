@@ -45,7 +45,7 @@ export async function GET(request: NextRequest) {
       { status: 200 }
     )
   } catch (error) {
-    console.log('Error fetching blogs:', error)
+    console.error('Error fetching blogs:', error)
     if (error instanceof ZodError) {
       return NextResponse.json(
         {
