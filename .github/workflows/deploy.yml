@@ -34,6 +34,16 @@ jobs:
         run: |
           echo "Building Next.js application..."
           yarn build
+          # Ensure .next directory is properly generated
+          if [ ! -d ".next" ]; then
+            echo "Error: .next directory not found after build"
+            exit 1
+          fi
+          # Verify static files
+          if [ ! -d ".next/static" ]; then
+            echo "Error: .next/static directory not found"
+            exit 1
+          fi
 
       - name: Set up SSH
         uses: shimataro/ssh-key-action@v2
@@ -92,6 +102,9 @@ jobs:
           
             # Use docker-compose.yml from the deployed code instead of from /root/services/
             cd portfolio
+          
+            # Ensure proper permissions for .next directory
+            chmod -R 755 .next
           
             # Start the container using the docker-compose.yml from the deployed code
             echo "Starting container..."
