@@ -14,6 +14,7 @@ import { Plus, Search, Edit, Trash, ArrowUpDown } from 'lucide-react'
 import { toast } from '@/components/ui/sonner'
 import Link from '@/components/ui/Link'
 import { IBlog } from 'models/blog'
+import logger from '@/lib/logger'
 
 // Define possible blog status types
 type BlogStatus = 'published' | 'draft'
@@ -52,7 +53,7 @@ const AdminBlogPage: React.FC = () => {
         toast.error('Failed to fetch blogs')
       }
     } catch (error) {
-      console.error('Error fetching blogs:', error)
+      logger.error('Error fetching blogs:', error)
       toast.error('Failed to fetch blogs')
     } finally {
       setIsLoading(false)
@@ -107,7 +108,7 @@ const AdminBlogPage: React.FC = () => {
           toast.error(data.message || 'Failed to delete blog post')
         }
       } catch (error) {
-        console.error('Error deleting blog:', error)
+        logger.error('Error deleting blog:', error)
         toast.error('Failed to delete blog post')
       }
     }

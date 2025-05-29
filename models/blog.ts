@@ -1,6 +1,12 @@
 import mongoose, { Schema, models, Document, Model } from 'mongoose'
 import { z } from 'zod'
 
+// Define tag schema
+const tagSchema = z.object({
+  id: z.string().optional(),
+  name: z.string(),
+})
+
 // Zod schema for blog validation and transformation
 export const blogSchema = z.object({
   id: z.string(),
@@ -12,7 +18,9 @@ export const blogSchema = z.object({
   author: z.string(),
   slug: z.string(),
   content: z.string(),
-  tags: z.any(),
+  contentRTE: z.unknown(),
+  contentImages: z.array(z.string()).optional(),
+  tags: z.array(tagSchema),
   featured: z.boolean(),
   isDraft: z.boolean().optional(),
 })
@@ -28,23 +36,23 @@ type BlogModel = Model<IBlog>
 
 // Generic utility function to transform and validate Mongoose document to any type
 export const transformToType = <T>(
-  doc: Document | Record<string, any> | null,
+  doc: Document | Record<string, unknown> | null,
   schema: z.ZodType<T>
 ): T | null => {
   if (!doc) return null
 
   // Handle both Mongoose documents and plain objects
-  const data = 'toObject' in doc ? doc.toObject() : doc
+  const data = 'toObject' in doc && typeof doc.toObject === 'function' ? doc.toObject() : doc
   return schema.parse(data)
 }
 
 // Utility function to transform and validate Mongoose document to IBlog
-export const transformToBlog = (doc: Document | Record<string, any> | null): IBlog | null => {
+export const transformToBlog = (doc: Document | Record<string, unknown> | null): IBlog | null => {
   return transformToType(doc, blogSchema)
 }
 
 // Utility function to transform and validate multiple Mongoose documents to IBlog array
-export const transformToBlogs = (docs: (BlogDocument | Record<string, any>)[]): IBlog[] => {
+export const transformToBlogs = (docs: (BlogDocument | Record<string, unknown>)[]): IBlog[] => {
   return docs
     .map((doc) => transformToType(doc, blogSchema))
     .filter((blog): blog is IBlog => blog !== null)
@@ -91,7 +99,12 @@ const BlogSchema = new Schema<IBlog>(
       maxlength: [200, 'Mini description cannot be more than 200 characters'],
     },
     tags: {
-      type: [Schema.Types.Mixed],
+      type: [
+        {
+          id: { type: String },
+          name: { type: String, required: true },
+        },
+      ],
       required: [true, 'Please provide tags for this blog'],
     },
     slug: {
@@ -103,9 +116,18 @@ const BlogSchema = new Schema<IBlog>(
       type: String,
       required: [true, 'Please provide content for this blog'],
     },
+    contentRTE: {
+      type: Schema.Types.Mixed,
+      default: [],
+    },
+    contentImages: {
+      type: [String],
+      default: [],
+    },
   },
   {
     timestamps: true,
+    minimize: false,
   }
 )
 

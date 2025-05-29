@@ -47,16 +47,16 @@ const formSchema = z.object({
     .string()
     .optional()
     .transform((url) => {
-      if (!url) return url;
+      if (!url) return url
       // Convert SSH URL to HTTPS URL if needed
       if (url.startsWith('git@github.com:')) {
-        return url.replace('git@github.com:', 'https://github.com/');
+        return url.replace('git@github.com:', 'https://github.com/')
       }
       // Ensure URL starts with https://
       if (!url.startsWith('https://')) {
-        return `https://${url}`;
+        return `https://${url}`
       }
-      return url;
+      return url
     }),
   liveUrl: z.string().optional(),
   status: z.enum(['completed', 'in-progress', 'planned']),

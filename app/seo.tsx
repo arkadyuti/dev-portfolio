@@ -13,20 +13,24 @@ interface PageSEOProps {
   [key: string]: string | string[] | undefined
 }
 
-export function genPageMetadata({ 
-  title, 
-  description, 
-  image, 
-  type = 'website', 
+export function genPageMetadata({
+  title,
+  description,
+  image,
+  type = 'website',
   publishedTime,
   modifiedTime,
   authors,
   tags,
-  ...rest 
+  ...rest
 }: PageSEOProps): Metadata {
   // Generate absolute URL for image
-  const imageUrl = image ? (image.startsWith('http') ? image : `${siteMetadata.siteUrl}${image}`) : siteMetadata.socialBanner
-  
+  const imageUrl = image
+    ? image.startsWith('http')
+      ? image
+      : `${siteMetadata.siteUrl}${image}`
+    : siteMetadata.socialBanner
+
   return {
     title,
     description: description || siteMetadata.description,
@@ -73,7 +77,7 @@ export function generateArticleStructuredData({
 }) {
   const imageUrl = image.startsWith('http') ? image : `${siteMetadata.siteUrl}${image}`
   const pageUrl = url.startsWith('http') ? url : `${siteMetadata.siteUrl}${url}`
-  
+
   return JSON.stringify({
     '@context': 'https://schema.org',
     '@type': 'Article',
@@ -121,7 +125,7 @@ export function generatePersonStructuredData({
 }) {
   const imageUrl = image.startsWith('http') ? image : `${siteMetadata.siteUrl}${image}`
   const pageUrl = url.startsWith('http') ? url : `${siteMetadata.siteUrl}${url}`
-  
+
   return JSON.stringify({
     '@context': 'https://schema.org',
     '@type': 'Person',

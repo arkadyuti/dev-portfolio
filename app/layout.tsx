@@ -49,7 +49,7 @@ export const metadata: Metadata = {
         width: 1200,
         height: 630,
         alt: siteMetadata.title,
-      }
+      },
     ],
     locale: 'en_US',
     type: 'website',

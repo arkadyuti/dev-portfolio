@@ -1,5 +1,6 @@
 'use client'
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useRef, useMemo } from 'react'
+import dynamic from 'next/dynamic'
 import { useParams, useRouter } from 'next/navigation'
 import { z } from 'zod'
 import { useForm } from 'react-hook-form'
@@ -22,6 +23,12 @@ import SearchableTagSelect, { Tag } from '@/components/admin/SearchableTagSelect
 import { toast } from '@/components/ui/sonner'
 import { ArrowLeft, Save, FileText } from 'lucide-react'
 import { IBlog } from 'models/blog'
+import logger from '@/lib/logger'
+import { PartialBlock } from '@blocknote/core'
+
+const BlockNoteEditorLocal = dynamic(() => import('@/components/BlockNoteEditor'), {
+  ssr: false,
+})
 
 // Form schema
 const formSchema = z.object({
@@ -31,7 +38,9 @@ const formSchema = z.object({
   excerpt: z.string().min(1, 'Excerpt is required'),
   content: z.string().min(1, 'Content is required'),
   featured: z.boolean().default(false),
+  contentRTE: z.array(z.any()).optional(),
   coverImage: z.union([z.instanceof(File), z.string().min(1, 'Cover image is required')]),
+  contentImages: z.array(z.string()).optional(),
   tags: z
     .array(
       z.object({
@@ -48,6 +57,15 @@ type FormValues = z.infer<typeof formSchema>
 // or /admin/blogs/new/page.tsx
 const AdminBlogForm: React.FC = () => {
   const params = useParams()
+  const editorRef = useRef<{
+    contentRTE: PartialBlock[] | null
+    contentImages: string[]
+    content: string
+  }>({
+    contentRTE: null,
+    contentImages: [],
+    content: '',
+  })
   const id = params?.id as string // For dynamic routes in Next.js
   const router = useRouter()
   const [availableTags, setAvailableTags] = useState<Tag[]>([])
@@ -63,6 +81,8 @@ const AdminBlogForm: React.FC = () => {
       date: new Date().toISOString().split('T')[0],
       excerpt: '',
       content: '',
+      contentRTE: [],
+      contentImages: [],
       featured: false,
       coverImage: '',
       tags: [],
@@ -98,12 +118,21 @@ const AdminBlogForm: React.FC = () => {
               id: tag.id || `tag-${Date.now()}-${Math.random()}`,
               name: tag.name || 'Untitled Tag',
             }))
+
+            // Set the contentRTE for the BlockNote editor
+            if (post.contentRTE) {
+              editorRef.current.contentRTE = post.contentRTE as PartialBlock[]
+            }
+            // Set the contentImages from the API
+            if (post.contentImages) {
+              editorRef.current.contentImages = post.contentImages
+            }
+
             form.reset({
               title: post.title,
               author: post.author,
               date: new Date(post.publishedAt).toISOString().split('T')[0],
               excerpt: post.excerpt,
-              content: post.content,
               featured: post.featured || false,
               coverImage: post.coverImage,
               tags: validTags,
@@ -114,7 +143,7 @@ const AdminBlogForm: React.FC = () => {
           }
         }
       } catch (error) {
-        console.error('Error fetching data:', error)
+        logger.error('Error fetching data:', error)
         toast.error('Failed to load data')
       } finally {
         setIsLoading(false)
@@ -166,11 +195,13 @@ const AdminBlogForm: React.FC = () => {
         }
       })
 
-      console.log('finding:: data:', data)
-
       // Add draft status
       formData.append('isDraft', String(isDraft))
-
+      formData.delete('content')
+      formData.delete('contentRTE')
+      formData.append('contentRTE', JSON.stringify(editorRef.current.contentRTE))
+      formData.append('content', editorRef.current.content)
+      formData.append('contentImages', JSON.stringify(editorRef.current.contentImages))
       // Make the API call
       const endpoint = id && id !== 'new' ? `/api/blog?blogId=${id}` : '/api/blog'
       const response = await fetch(endpoint, {
@@ -192,7 +223,7 @@ const AdminBlogForm: React.FC = () => {
       )
       router.push('/admin/blogs')
     } catch (error) {
-      console.error('Error saving blog post:', error)
+      logger.error('Error saving blog post:', error)
       toast.error(error instanceof Error ? error.message : 'Failed to save blog post')
     } finally {
       setIsSubmitting(false)
@@ -299,10 +330,21 @@ const AdminBlogForm: React.FC = () => {
                     <FormItem>
                       <FormLabel>Content</FormLabel>
                       <FormControl>
-                        <Textarea
-                          placeholder="Full content of the blog post"
-                          className="min-h-[300px]"
-                          {...field}
+                        <BlockNoteEditorLocal
+                          initialContent={editorRef.current.contentRTE}
+                          onDataChange={(contentRTE, content) => {
+                            editorRef.current.contentRTE = contentRTE
+                            editorRef.current.content = content
+                            field.onChange(content)
+                          }}
+                          onImageUpload={(imageUrl) => {
+                            editorRef.current.contentImages.push(imageUrl)
+                          }}
+                          onImageDelete={(imageUrl) => {
+                            editorRef.current.contentImages = editorRef.current.contentImages.filter(
+                              (url) => url !== imageUrl
+                            )
+                          }}
                         />
                       </FormControl>
                       <FormMessage />
