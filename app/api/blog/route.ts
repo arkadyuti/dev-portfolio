@@ -1,7 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { v4 as uuidv4 } from 'uuid'
 import { minioClient, uploadFile, makeFilePublic, getPublicFileUrl, deleteFile } from '@/lib/minio'
+import { queueFileDeletion } from '@/lib/background-tasks'
 import BlogModels from 'models/blog'
+import logger from '@/lib/logger'
 
 export async function POST(request: NextRequest) {
   try {
@@ -14,6 +16,8 @@ export async function POST(request: NextRequest) {
     const author = formData.get('author')
     const excerpt = formData.get('excerpt')
     const content = formData.get('content')
+    const contentRTE = formData.get('contentRTE') as string
+    const contentImages = JSON.parse(formData.get('contentImages') as string)
     const featured = formData.get('featured') === 'true'
     const tags = JSON.parse(formData.get('tags') as string)
     const isDraft = formData.get('isDraft') === 'true'
@@ -66,6 +70,8 @@ export async function POST(request: NextRequest) {
       author,
       excerpt,
       content,
+      contentRTE: JSON.parse(contentRTE),
+      contentImages,
       featured,
       tags,
       isDraft,
@@ -114,14 +120,9 @@ export async function POST(request: NextRequest) {
         // Delete the temporary file
         await deleteFile(bucketName, tempCoverImageKey)
 
-        // Delete the old cover image if it exists and is different from the new one
+        // Queue deletion of the old cover image if it exists and is different from the new one
         if (oldCoverImageKey && oldCoverImageKey !== finalFilename) {
-          try {
-            await deleteFile(bucketName, oldCoverImageKey)
-          } catch (error) {
-            console.warn(`Failed to delete old cover image: ${oldCoverImageKey}`, error)
-            // Continue execution even if delete fails
-          }
+          queueFileDeletion(bucketName, oldCoverImageKey)
         }
 
         // Update the blog with the new file information and save to DB
@@ -129,7 +130,7 @@ export async function POST(request: NextRequest) {
         savedArticle.coverImage = getPublicFileUrl(bucketName, finalFilename)
         await savedArticle.save()
       } catch (error) {
-        console.error('Error processing cover image:', error)
+        logger.error('Error processing cover image:', error)
         // If processing fails, we'll keep using the temporary file
         // The blog will still work, just with a less ideal filename
       }
@@ -143,7 +144,7 @@ export async function POST(request: NextRequest) {
       { status: 200 }
     )
   } catch (error) {
-    console.error('Error processing blog post:', error)
+    logger.error('Error processing blog post:', error.message)
     return NextResponse.json(
       { success: false, message: 'Failed to process blog post' },
       { status: 500 }

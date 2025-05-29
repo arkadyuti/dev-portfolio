@@ -19,7 +19,7 @@ export async function ensureBucket(bucketName: string) {
       logger.info(`Created bucket: ${bucketName}`)
     }
   } catch (error: unknown) {
-    console.error(`Failed to ensure bucket ${bucketName}:`, error)
+    logger.error(`Failed to ensure bucket ${bucketName}:`, error)
 
     // If it's a network error, provide more context
     if (error && typeof error === 'object' && 'code' in error && 'message' in error) {
@@ -50,7 +50,7 @@ export async function uploadFile(
 
     return await minioClient.putObject(bucketName, fileName, buffer, buffer.length, metadata)
   } catch (error: unknown) {
-    console.error('Upload failed:', error)
+    logger.error('Upload failed:', error)
     throw error
   }
 }
@@ -63,7 +63,7 @@ export async function getPresignedUrl(
   try {
     return await minioClient.presignedGetObject(bucketName, fileName, expirySeconds)
   } catch (error: unknown) {
-    console.error('Failed to generate presigned URL:', error)
+    logger.error('Failed to generate presigned URL:', error)
     throw error
   }
 }
@@ -172,7 +172,7 @@ export async function makeFilePublic(bucketName: string, fileName: string) {
     // Return the permanent public URL
     return getPublicFileUrl(bucketName, fileName)
   } catch (error) {
-    console.error(`Failed to make file public: ${error}`)
+    logger.error(`Failed to make file public: ${error}`)
     throw error
   }
 }

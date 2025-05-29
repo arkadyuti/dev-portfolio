@@ -10,6 +10,7 @@ import { ShareButtons } from './ShareButtons'
 import { Metadata } from 'next'
 import { genPageMetadata, generateArticleStructuredData } from '../../seo'
 import Script from 'next/script'
+import logger from '@/lib/logger'
 
 // Server-side data fetching
 async function getBlogPost(slug: string): Promise<IBlog | null> {
@@ -18,7 +19,7 @@ async function getBlogPost(slug: string): Promise<IBlog | null> {
     if (!post) return null
     return transformToBlog(post)
   } catch (error) {
-    console.error('Error fetching blog post:', error)
+    logger.error('Error fetching blog post:', error)
     return null
   }
 }
@@ -35,7 +36,7 @@ async function getRelatedPosts(currentPostId: string): Promise<IBlog[]> {
 
     return posts.map((post) => transformToBlog(post)).filter((post): post is IBlog => post !== null)
   } catch (error) {
-    console.error('Error fetching related posts:', error)
+    logger.error('Error fetching related posts:', error)
     return []
   }
 }
@@ -163,7 +164,7 @@ export default async function BlogDetail({ params }: { params: Promise<{ slug: s
 
           {/* Content */}
           <div className="prose prose-lg max-w-none">
-            <p className="mb-4">{post.content}</p>
+            <div className="mb-4" dangerouslySetInnerHTML={{ __html: post.content }} />
           </div>
 
           {/* Share buttons */}

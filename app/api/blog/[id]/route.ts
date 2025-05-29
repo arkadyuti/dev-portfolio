@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import BlogModels, { transformToBlog } from 'models/blog'
 import { ZodError } from 'zod'
-import { deleteFile } from '@/lib/minio'
+import { queueFileDeletion, queueFileDeletions } from '@/lib/background-tasks'
 
 export async function GET(request: NextRequest, context: { params: Promise<{ id: string }> }) {
   try {
@@ -10,7 +10,12 @@ export async function GET(request: NextRequest, context: { params: Promise<{ id:
     // Find the blog post by id
     const existingBlog = await BlogModels.findOne({ id })
 
-    const transformedBlog = transformToBlog(existingBlog)
+    const transformedBlog = transformToBlog(
+      existingBlog.toObject({
+        minimize: false, // This prevents removal of empty objects
+        transform: false, // This prevents any transformation functions
+      })
+    )
 
     if (!transformedBlog) {
       return NextResponse.json({ success: false, message: 'Blog not found' }, { status: 404 })
@@ -47,14 +52,14 @@ export async function DELETE(request: NextRequest, context: { params: Promise<{ 
       return NextResponse.json({ success: false, message: 'Blog not found' }, { status: 404 })
     }
 
-    // Delete cover image if exists
+    // Queue cover image deletion if exists
     if (blog.coverImageKey) {
-      try {
-        await deleteFile(process.env.MINIO_IMAGE_BUCKET!, blog.coverImageKey)
-      } catch (error) {
-        console.warn(`Failed to delete cover image: ${blog.coverImageKey}`, error)
-        // Continue execution even if delete fails
-      }
+      queueFileDeletion(process.env.MINIO_IMAGE_BUCKET!, blog.coverImageKey)
+    }
+
+    // Queue content images deletion if they exist
+    if (blog.contentImages && blog.contentImages.length > 0) {
+      queueFileDeletions(process.env.MINIO_IMAGE_BUCKET!, blog.contentImages)
     }
 
     // Delete the blog post by id

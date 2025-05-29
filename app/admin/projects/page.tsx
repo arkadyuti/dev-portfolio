@@ -15,6 +15,7 @@ import { toast } from '@/components/ui/sonner'
 import Link from '@/components/ui/Link'
 import { IProject } from 'models/project'
 import { Tag } from '@/components/admin/SearchableTagSelect'
+import logger from '@/lib/logger'
 
 // Define possible project UI status types (different from the model's status)
 type ProjectUIStatus = 'published' | 'draft'
@@ -53,7 +54,7 @@ const AdminProjectPage: React.FC = () => {
         toast.error('Failed to fetch projects')
       }
     } catch (error) {
-      console.error('Error fetching projects:', error)
+      logger.error('Error fetching projects:', error)
       toast.error('Failed to fetch projects')
     } finally {
       setIsLoading(false)
@@ -109,7 +110,7 @@ const AdminProjectPage: React.FC = () => {
           toast.error(data.message || 'Failed to delete project')
         }
       } catch (error) {
-        console.error('Error deleting project:', error)
+        logger.error('Error deleting project:', error)
         toast.error('Failed to delete project')
       }
     }
