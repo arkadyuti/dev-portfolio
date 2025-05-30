@@ -5,6 +5,7 @@ import { Input } from '@/components/ui/input'
 import { toast } from '@/components/ui/sonner'
 import Link from '@/components/ui/Link'
 import { useState } from 'react'
+import { logger } from '@/lib/logger'
 
 export function Footer() {
   const [isLoading, setIsLoading] = useState(false)
@@ -47,7 +48,7 @@ export function Footer() {
         toast.error(data.message || 'Failed to subscribe to the newsletter')
       }
     } catch (error) {
-      console.error('Error subscribing to newsletter:', error)
+      logger.error('Error subscribing to newsletter', error)
       toast.error('Failed to subscribe to the newsletter')
     } finally {
       setIsLoading(false)

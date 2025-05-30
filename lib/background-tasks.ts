@@ -1,4 +1,5 @@
 import { deleteFile } from './minio'
+import { logger } from './logger'
 
 // Queue for background tasks
 const backgroundTasks: (() => Promise<void>)[] = []
@@ -16,7 +17,7 @@ async function processBackgroundTasks() {
         try {
           await task()
         } catch (error) {
-          console.error('Background task failed:', error)
+          logger.error('Background task failed', error)
           // Continue with next task even if one fails
         }
       }

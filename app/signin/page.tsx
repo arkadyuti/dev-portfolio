@@ -17,6 +17,7 @@ import {
 } from '@/components/ui/form'
 import { Eye, EyeOff, Lock, User } from 'lucide-react'
 import { toast } from '@/components/ui/sonner'
+import { logger } from '@/lib/logger'
 
 const formSchema = z.object({
   email: z.string().email('Please enter a valid email'),
@@ -64,7 +65,7 @@ function SignInContent() {
         router.push(returnUrl)
       }
     } catch (error) {
-      console.error('Login error:', error)
+      logger.error('Login error', error)
       toast.error('An error occurred during login')
     }
   }

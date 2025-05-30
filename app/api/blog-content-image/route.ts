@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { v4 as uuidv4 } from 'uuid'
 import { uploadFile, makeFilePublic, getPublicFileUrl } from '@/lib/minio'
 import { processImage } from '@/lib/image-utils'
+import { logger } from '@/lib/logger'
 
 export async function POST(request: NextRequest) {
   try {
@@ -59,7 +60,7 @@ export async function POST(request: NextRequest) {
       { status: 200 }
     )
   } catch (error) {
-    console.error('Error uploading image:', error)
+    logger.error('Error uploading image', error)
     return NextResponse.json({ success: false, message: 'Failed to upload image' }, { status: 500 })
   }
 }

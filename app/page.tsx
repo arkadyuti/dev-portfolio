@@ -8,6 +8,7 @@ import Image from 'next/image'
 import ProjectModels, { transformToProjects } from 'models/project'
 import BlogModels, { transformToBlogs } from 'models/blog'
 import connectToDatabase from '@/lib/mongodb'
+import { logger } from '@/lib/logger'
 
 // Explicitly mark page as server component
 export const dynamic = 'force-dynamic'
@@ -23,7 +24,7 @@ async function getFeaturedProjects() {
 
     return transformToProjects(projects)
   } catch (error) {
-    console.error('Error fetching featured projects:', error)
+    logger.error('Error fetching featured projects', error)
     return []
   }
 }
@@ -39,7 +40,7 @@ async function getRecentBlogPosts() {
 
     return transformToBlogs(blogs)
   } catch (error) {
-    console.error('Error fetching recent blog posts:', error)
+    logger.error('Error fetching recent blog posts', error)
     return []
   }
 }

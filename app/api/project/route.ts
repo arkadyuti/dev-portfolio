@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { v4 as uuidv4 } from 'uuid'
 import { minioClient, uploadFile, makeFilePublic, getPublicFileUrl, deleteFile } from '@/lib/minio'
 import ProjectModels from 'models/project'
+import { logger } from '@/lib/logger'
 
 export async function POST(request: NextRequest) {
   try {
@@ -120,7 +121,7 @@ export async function POST(request: NextRequest) {
           try {
             await deleteFile(bucketName, oldCoverImageKey)
           } catch (error) {
-            console.warn(`Failed to delete old cover image: ${oldCoverImageKey}`, error)
+            logger.warn(`Failed to delete old cover image: ${oldCoverImageKey}`, error)
             // Continue execution even if delete fails
           }
         }
@@ -130,7 +131,7 @@ export async function POST(request: NextRequest) {
         savedProject.coverImage = getPublicFileUrl(bucketName, finalFilename)
         await savedProject.save()
       } catch (error) {
-        console.error('Error processing cover image:', error)
+        logger.error('Error processing cover image', error)
         // If processing fails, we'll keep using the temporary file
         // The project will still work, just with a less ideal filename
       }
@@ -144,7 +145,7 @@ export async function POST(request: NextRequest) {
       { status: 200 }
     )
   } catch (error) {
-    console.error('Error processing project post:', error)
+    logger.error('Error processing project post', error)
     return NextResponse.json(
       { success: false, message: 'Failed to process project post' },
       { status: 500 }

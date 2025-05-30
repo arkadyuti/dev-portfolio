@@ -9,6 +9,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import Link from '@/components/ui/Link'
 import { IBlog } from '@/models/blog'
 import { IProject } from '@/models/project'
+import { logger } from '@/lib/logger'
 
 type SearchResult = {
   blogs: IBlog[]
@@ -63,7 +64,7 @@ export default function SearchForm({ initialQuery = '', initialResults }: Search
         projects: data.data.projects,
       })
     } catch (error) {
-      console.error('Search error:', error)
+      logger.error('Search error', error)
     } finally {
       setSearching(false)
     }

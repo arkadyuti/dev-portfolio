@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import NewsletterModel, { transformToNewsletter } from 'models/newsletter'
 import connectToDatabase from '@/lib/mongodb'
 import { v4 as uuidv4 } from 'uuid'
+import { logger } from '@/lib/logger'
 
 export async function POST(request: NextRequest) {
   try {
@@ -43,7 +44,7 @@ export async function POST(request: NextRequest) {
       { status: 201 }
     )
   } catch (error) {
-    console.error('Error processing newsletter subscription:', error)
+    logger.error('Error processing newsletter subscription', error)
     return NextResponse.json(
       { success: false, message: 'Failed to process newsletter subscription' },
       { status: 500 }

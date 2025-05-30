@@ -1,4 +1,5 @@
 import sharp from 'sharp'
+import { logger } from './logger'
 
 interface ImageProcessingOptions {
   maxWidth?: number
@@ -80,7 +81,7 @@ export async function processImage(
     // Return original if processing didn't reduce size
     return buffer
   } catch (error) {
-    console.error('Error processing image:', error)
+    logger.error('Error processing image', error)
     return buffer // Return original buffer if processing fails
   }
 }

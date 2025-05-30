@@ -128,7 +128,7 @@ const handleNewsletterSubmit = async (e: React.FormEvent) => {
       toast.error(data.message || 'Failed to subscribe to the newsletter')
     }
   } catch (error) {
-    console.error('Error subscribing to newsletter:', error)
+    logger.error('Error subscribing to newsletter:', error)
     toast.error('Failed to subscribe to the newsletter')
   } finally {
     setIsLoading(false)

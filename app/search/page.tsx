@@ -2,6 +2,7 @@ import connectToDatabase from '@/lib/mongodb'
 import BlogModels, { transformToBlogs } from '@/models/blog'
 import ProjectModels, { transformToProjects } from '@/models/project'
 import SearchForm from './SearchForm'
+import { logger } from '@/lib/logger'
 
 // Force dynamic rendering
 export const dynamic = 'force-dynamic'
@@ -48,7 +49,7 @@ export default async function SearchPage({
         projects: transformToProjects(projects),
       }
     } catch (error) {
-      console.error('Server-side search error:', error)
+      logger.error('Server-side search error', error)
     }
   }
 
