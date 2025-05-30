@@ -65,7 +65,7 @@ export const logger = {
 
   error: (message: string, meta?: unknown) => {
     if (shouldLog('error')) {
-      console.error(formatLog('error', message, meta))
+      logger.error(formatLog('error', message, meta))
     }
   },
 }

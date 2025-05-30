@@ -412,7 +412,7 @@ interface Tag {
      const data = await response.json()
      return { success: true, data }
    } catch (error) {
-     console.error('API Error:', error)
+     logger.error('API Error:', error)
      return { success: false, error: { message: 'Failed to fetch data' } }
    }
    ```

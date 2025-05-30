@@ -3,6 +3,7 @@ import { Button } from '@/components/ui/button'
 import { Upload, Image as ImageIcon } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import Image from 'next/image'
+import { logger } from '@/lib/logger'
 
 interface ImageUploadProps {
   value?: string | File
@@ -42,7 +43,7 @@ const ImageUpload: React.FC<ImageUploadProps> = ({
       setIsUploading(true)
       onChange(file)
     } catch (error) {
-      console.error('Upload failed:', error)
+      logger.error('Upload failed', error)
     } finally {
       setIsUploading(false)
       // Clear the input value to allow uploading the same file again

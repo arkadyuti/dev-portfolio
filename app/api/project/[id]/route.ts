@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import ProjectModels, { transformToProject } from 'models/project'
 import { deleteFile } from '@/lib/minio'
+import { logger } from '@/lib/logger'
 
 // GET a single project by ID
 export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
@@ -17,7 +18,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
       data: transformToProject(project),
     })
   } catch (error) {
-    console.error('Error fetching project:', error)
+    logger.error('Error fetching project', error)
     return NextResponse.json(
       { success: false, message: 'Failed to fetch project' },
       { status: 500 }
@@ -43,7 +44,7 @@ export async function DELETE(
       try {
         await deleteFile(process.env.MINIO_IMAGE_BUCKET!, project.coverImageKey)
       } catch (error) {
-        console.warn(`Failed to delete cover image: ${project.coverImageKey}`, error)
+        logger.warn(`Failed to delete cover image: ${project.coverImageKey}`, error)
         // Continue execution even if delete fails
       }
     }
@@ -53,7 +54,7 @@ export async function DELETE(
 
     return NextResponse.json({ success: true })
   } catch (error) {
-    console.error('Error deleting project:', error)
+    logger.error('Error deleting project', error)
     return NextResponse.json(
       { success: false, message: 'Failed to delete project' },
       { status: 500 }

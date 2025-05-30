@@ -1,5 +1,6 @@
 import mongoose, { Schema, models, Document, Model } from 'mongoose'
 import { z } from 'zod'
+import { logger } from '@/lib/logger'
 import { v4 as uuidv4 } from 'uuid'
 
 // Zod schema for newsletter validation
@@ -33,7 +34,7 @@ export const transformToNewsletter = (doc: NewsletterDocument | null): INewslett
 
     return newsletterSchema.parse(newsletter)
   } catch (error) {
-    console.error('Error transforming newsletter document:', error)
+    logger.error('Error transforming newsletter document', error)
     return null
   }
 }

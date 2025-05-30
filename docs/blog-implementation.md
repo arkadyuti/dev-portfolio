@@ -134,7 +134,7 @@ async function getRecentBlogPosts() {
 
     return transformToBlogs(blogs)
   } catch (error) {
-    console.error('Error fetching recent blog posts:', error)
+    logger.error('Error fetching recent blog posts:', error)
     return []
   }
 }

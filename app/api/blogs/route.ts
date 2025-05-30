@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import BlogModels, { transformToBlogs } from 'models/blog'
 import { ZodError } from 'zod'
+import { logger } from '@/lib/logger'
 
 export async function GET(request: NextRequest) {
   try {
@@ -45,7 +46,7 @@ export async function GET(request: NextRequest) {
       { status: 200 }
     )
   } catch (error) {
-    console.error('Error fetching blogs:', error)
+    logger.error('Error fetching blogs', error)
     if (error instanceof ZodError) {
       return NextResponse.json(
         {

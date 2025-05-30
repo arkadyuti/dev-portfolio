@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import connectToDatabase from '@/lib/mongodb'
 import BlogModels, { transformToBlogs } from '@/models/blog'
 import ProjectModels, { transformToProjects } from '@/models/project'
+import { logger } from '@/lib/logger'
 
 export async function GET(req: NextRequest) {
   try {
@@ -45,7 +46,7 @@ export async function GET(req: NextRequest) {
       },
     })
   } catch (error) {
-    console.error('Search error:', error)
+    logger.error('Search error', error)
     return NextResponse.json({ success: false, message: 'Failed to search' }, { status: 500 })
   }
 }

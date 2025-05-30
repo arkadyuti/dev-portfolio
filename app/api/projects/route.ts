@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import ProjectModels, { transformToProjects } from 'models/project'
+import { logger } from '@/lib/logger'
 
 export async function GET(request: NextRequest) {
   try {
@@ -22,7 +23,7 @@ export async function GET(request: NextRequest) {
       data: transformToProjects(projects),
     })
   } catch (error) {
-    console.error('Error fetching projects:', error)
+    logger.error('Error fetching projects', error)
     return NextResponse.json(
       { success: false, message: 'Failed to fetch projects' },
       { status: 500 }

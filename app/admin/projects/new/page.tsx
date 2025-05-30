@@ -29,6 +29,7 @@ import SearchableTagSelect, { Tag } from '@/components/admin/SearchableTagSelect
 import { toast } from '@/components/ui/sonner'
 import { ArrowLeft, Save, FileText } from 'lucide-react'
 import { IProject } from 'models/project'
+import { logger } from '@/lib/logger'
 
 // Form schema
 const formSchema = z.object({
@@ -133,7 +134,7 @@ const AdminProjectForm: React.FC = () => {
           }
         }
       } catch (error) {
-        console.error('Error fetching data:', error)
+        logger.error('Error fetching data', error)
         toast.error('Failed to load data')
       } finally {
         setIsLoading(false)
@@ -209,7 +210,7 @@ const AdminProjectForm: React.FC = () => {
       )
       router.push('/admin/projects')
     } catch (error) {
-      console.error('Error saving project:', error)
+      logger.error('Error saving project', error)
       toast.error(error instanceof Error ? error.message : 'Failed to save project')
     } finally {
       setIsSubmitting(false)

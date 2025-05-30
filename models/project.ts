@@ -1,5 +1,6 @@
 import mongoose, { Schema, models, Document, Model } from 'mongoose'
 import { z } from 'zod'
+import { logger } from '@/lib/logger'
 
 // Define Tag interface
 interface Tag {
@@ -49,7 +50,7 @@ export const transformToType = <T>(
   try {
     return schema.parse(data)
   } catch (error) {
-    console.error('Schema validation error:', error)
+    logger.error('Schema validation error', error)
     return null
   }
 }

@@ -37,7 +37,7 @@ async function getFeaturedProjects() {
 
     return transformToProjects(projects)
   } catch (error) {
-    console.error('Error fetching featured projects:', error)
+    logger.error('Error fetching featured projects:', error)
     return []
   }
 }
@@ -76,7 +76,7 @@ async function getRecentBlogPosts() {
 
     return transformToBlogs(blogs)
   } catch (error) {
-    console.error('Error fetching recent blog posts:', error)
+    logger.error('Error fetching recent blog posts:', error)
     return []
   }
 }

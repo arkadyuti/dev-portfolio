@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { toast } from '@/components/ui/sonner'
+import { logger } from '@/lib/logger'
 
 export default function NewsletterForm() {
   const [email, setEmail] = useState('')
@@ -37,7 +38,7 @@ export default function NewsletterForm() {
         toast.error(data.message || 'Failed to subscribe to the newsletter')
       }
     } catch (error) {
-      console.error('Error subscribing to newsletter:', error)
+      logger.error('Error subscribing to newsletter', error)
       toast.error('Failed to subscribe to the newsletter')
     } finally {
       setIsLoading(false)

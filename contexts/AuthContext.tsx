@@ -1,5 +1,6 @@
 "use client"
 import React, { createContext, useState, useContext, useEffect } from 'react';
+import { logger } from '@/lib/logger';
 
 interface User {
   id: string;
@@ -29,7 +30,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setUser(JSON.parse(storedUser));
       }
     } catch (error) {
-      console.error("Error retrieving stored user:", error);
+      logger.error("Error retrieving stored user", error);
     } finally {
       setIsLoading(false);
     }
@@ -37,7 +38,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const login = async (email: string, password: string): Promise<boolean> => {
     setIsLoading(true);
-    
+
     // Mock authentication - in a real app, this would be an API call
     return new Promise((resolve) => {
       setTimeout(() => {
@@ -52,7 +53,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             resolve(false);
           }
         } catch (error) {
-          console.error("Login error:", error);
+          logger.error("Login error", error);
           resolve(false);
         } finally {
           setIsLoading(false);
@@ -67,7 +68,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const value = {
-    user, 
+    user,
     // isAuthenticated: !!user,
     isAuthenticated: !!user,
     isLoading,
