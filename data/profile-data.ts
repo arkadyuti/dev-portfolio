@@ -52,7 +52,7 @@ I'm also passionate about exploring Golang, diving into IoT experiments, and tin
 In my downtime, you'll often find me gaming on my PC or PS5—it's my way of relaxing and staying inspired by great user experiences. 
 Feel free to reach out!
   `,
-  profileImage: "http://minio-api.3027622.siliconpin.com/portfolio/709bccba-9dd5-47dc-9825-445caa3f5c07_1747858835509_cover-image.jpg",
+  profileImage: "http://minio-api.3027622.siliconpin.com/portfolio/arkadyuti_sarkar.jpg",
   socialLinks: {
     github: "https://github.com/arkadyuti",
     linkedin: "https://www.linkedin.com/in/arkadyuti/",
