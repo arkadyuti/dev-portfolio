@@ -1,13 +1,15 @@
 # Blog Implementation Documentation
 
-This document outlines the implementation of the Blog feature in the portfolio application.
+This document outlines the complete implementation of the Blog feature in the portfolio application, including image handling, data models, API endpoints, and frontend components.
 
 ## Table of Contents
 
 1. [Data Model](#data-model)
 2. [API Endpoints](#api-endpoints)
 3. [Frontend Components](#frontend-components)
-4. [Recent Blog Posts on Homepage](#recent-blog-posts-on-homepage)
+4. [Image Handling](#image-handling)
+5. [Blog Editor Implementation](#blog-editor-implementation)
+6. [Recent Blog Posts on Homepage](#recent-blog-posts-on-homepage)
 
 ## Data Model
 
@@ -24,6 +26,8 @@ interface IBlog {
   author: string
   slug: string
   content: string
+  contentRTE: unknown
+  contentImages: string[]
   tags: Tag[]
   featured: boolean
   isDraft?: boolean
@@ -37,13 +41,15 @@ Key fields:
 - `title`: Blog post title
 - `excerpt`: Short summary of the blog post
 - `coverImage`: URL to the blog's main image
-- `coverImageKey`: Reference to the image in the storage system
+- `coverImageKey`: Reference to the image in MinIO storage
 - `author`: Author of the blog post
-- `slug`: URL-friendly version of the title (auto-generated if not provided)
+- `slug`: URL-friendly version of the title (auto-generated)
 - `content`: Main content of the blog post
+- `contentRTE`: Rich text editor data
+- `contentImages`: Array of image URLs used in the content
 - `tags`: Array of tags associated with the blog post
 - `featured`: Boolean indicating if the blog post is featured
-- `isDraft`: Boolean indicating if the blog post is a draft or published
+- `isDraft`: Boolean indicating if the blog post is a draft
 
 ## API Endpoints
 
@@ -89,6 +95,31 @@ Retrieves a specific blog post by its slug.
 }
 ```
 
+### POST /api/blog
+
+Creates or updates a blog post.
+
+**Request Body (FormData):**
+
+- `title`: Blog post title
+- `author`: Author name
+- `excerpt`: Blog excerpt
+- `content`: Blog content
+- `contentRTE`: Rich text editor data
+- `contentImages`: Array of image URLs
+- `coverImage`: Cover image file
+- `tags`: Array of tags
+- `featured`: Boolean
+- `isDraft`: Boolean
+
+### DELETE /api/blog/[id]
+
+Deletes a blog post and its associated images.
+
+**Path Parameters:**
+
+- `id`: The ID of the blog post to delete
+
 ## Frontend Components
 
 ### Blog Page (`app/blog/page.tsx`)
@@ -114,9 +145,89 @@ Displays a single blog post.
 Features:
 
 - Server-side data fetching from MongoDB
-- Markdown rendering
+- Rich text content rendering
 - Related posts section
 - Author information
+- Reading time calculation
+- Social sharing buttons
+
+### Admin Blog Editor (`app/admin/blogs/new/page.tsx`)
+
+Provides a rich text editor for creating and editing blog posts.
+
+Features:
+
+- Rich text editing with BlockNoteEditor
+- Image upload and management
+- Tag management
+- Draft/publish functionality
+- Cover image upload
+
+## Image Handling
+
+### Image Upload Process
+
+1. When a user adds an image in the editor:
+   - The image is uploaded to `/api/blog-content-image`
+   - The uploaded image URL is returned
+   - The URL is passed to the editor for display
+   - The URL is tracked via `onImageUpload` callback
+
+### State Management
+
+The blog form maintains editor state using `editorRef`:
+
+```typescript
+const editorRef = useRef<{
+  contentRTE: any;      // Rich text editor content
+  contentImages: string[]; // List of uploaded image URLs
+  content: string;      // HTML content
+}>({
+  contentRTE: null,
+  contentImages: [],
+  content: ''
+})
+```
+
+### Image Storage
+
+- Images are stored in MinIO
+- Each image gets a unique key
+- Public URLs are generated for display
+- Image cleanup is handled on blog deletion
+
+## Blog Editor Implementation
+
+### BlockNoteEditor Component
+
+Located at `components/BlockNoteEditor/BlockNoteEditor.tsx`
+
+Key features:
+
+- Rich text editing with image support
+- Image upload functionality
+- Content tracking through callbacks
+
+```typescript
+interface BlockNoteEditorLocalProps {
+  onDataChange: (blocks: Block[], html: string) => void
+  initialContent?: PartialBlock[] | undefined
+  onImageUpload?: (imageUrl: string) => void
+}
+```
+
+### Form Submission
+
+When the form is submitted:
+
+1. All form data is collected into FormData
+2. Editor content and images are included:
+   ```typescript
+   formData.append('contentRTE', JSON.stringify(editorRef.current.contentRTE))
+   formData.append('content', editorRef.current.content)
+   formData.append('contentImages', JSON.stringify(editorRef.current.contentImages))
+   ```
+3. The complete data is sent to the server for processing
 
 ## Recent Blog Posts on Homepage
 
