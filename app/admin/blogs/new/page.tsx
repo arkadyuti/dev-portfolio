@@ -199,6 +199,7 @@ const AdminBlogForm: React.FC = () => {
       formData.append('isDraft', String(isDraft))
       formData.delete('content')
       formData.delete('contentRTE')
+      formData.delete('contentImages')
       formData.append('contentRTE', JSON.stringify(editorRef.current.contentRTE))
       formData.append('content', editorRef.current.content)
       formData.append('contentImages', JSON.stringify(editorRef.current.contentImages))
@@ -341,9 +342,8 @@ const AdminBlogForm: React.FC = () => {
                             editorRef.current.contentImages.push(imageUrl)
                           }}
                           onImageDelete={(imageUrl) => {
-                            editorRef.current.contentImages = editorRef.current.contentImages.filter(
-                              (url) => url !== imageUrl
-                            )
+                            editorRef.current.contentImages =
+                              editorRef.current.contentImages.filter((url) => url !== imageUrl)
                           }}
                         />
                       </FormControl>

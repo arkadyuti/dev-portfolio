@@ -7,6 +7,8 @@ export async function GET(request: NextRequest) {
     const { searchParams } = request.nextUrl
     const fetchAll = searchParams.get('fetchAll') === 'true'
 
+    logger.info('Projects API called with params:', { fetchAll })
+
     // Build query
     const query: { isDraft?: boolean } = {}
 
@@ -15,12 +17,19 @@ export async function GET(request: NextRequest) {
       query.isDraft = false
     }
 
+    logger.info('Query being used:', query)
+
     // Get projects from database
     const projects = await ProjectModels.find(query).sort({ featured: -1, createdAt: -1 }).lean()
 
+    logger.info('Raw projects from database:', { count: projects.length, projects })
+
+    const transformedProjects = transformToProjects(projects)
+    logger.info('Transformed projects:', { count: transformedProjects.length, transformedProjects })
+
     return NextResponse.json({
       success: true,
-      data: transformToProjects(projects),
+      data: transformedProjects,
     })
   } catch (error) {
     logger.error('Error fetching projects', error)

@@ -47,8 +47,15 @@ export const transformToType = <T>(
 
   // Handle both Mongoose documents and plain objects
   const data = 'toObject' in doc ? (doc as Document).toObject() : doc
+
+  // Map _id to id for MongoDB documents
+  const transformedData = {
+    ...data,
+    id: data._id?.toString() || data.id,
+  }
+
   try {
-    return schema.parse(data)
+    return schema.parse(transformedData)
   } catch (error) {
     logger.error('Schema validation error', error)
     return null

@@ -1,15 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { v4 as uuidv4 } from 'uuid'
-import { minioClient, uploadFile, makeFilePublic, getPublicFileUrl, deleteFile } from '@/lib/minio'
-import { queueFileDeletion } from '@/lib/background-tasks'
 import BlogModels from 'models/blog'
 import logger from '@/lib/logger'
+import { uploadTempImage, moveToFinalLocation } from '@/lib/image-upload'
 
 export async function POST(request: NextRequest) {
   try {
+    logger.info('Starting blog post processing')
     const formData = await request.formData()
     const coverImage = formData.get('coverImage') as File
     const blogId = request.nextUrl.searchParams.get('blogId')
+    logger.info('Form data received', { blogId, hasCoverImage: !!coverImage })
 
     // Get other form data
     const title = formData.get('title')
@@ -21,46 +22,46 @@ export async function POST(request: NextRequest) {
     const featured = formData.get('featured') === 'true'
     const tags = JSON.parse(formData.get('tags') as string)
     const isDraft = formData.get('isDraft') === 'true'
-
-    let coverImageKey = ''
-    let coverImageUrl = ''
-    let tempCoverImageKey = ''
+    logger.info('Form data parsed', { title, author, featured, isDraft })
 
     const targetBlogId = blogId ? blogId : uuidv4()
     const bucketName = process.env.MINIO_IMAGE_BUCKET
+    const tempImagesPath = 'temp-images'
+    const blogImagesPath = 'blog-images'
+    logger.info('Configuration set', { targetBlogId, bucketName })
 
     // For existing blog, fetch the current data to handle old image cleanup
     let existingBlog = null
     let oldCoverImageKey = ''
 
     if (blogId) {
+      logger.info('Fetching existing blog', { blogId })
       existingBlog = await BlogModels.findOne({ id: blogId })
       if (!existingBlog) {
+        logger.warn('Blog not found', { blogId })
         return NextResponse.json({ success: false, message: 'Blog not found' }, { status: 404 })
       }
       oldCoverImageKey = existingBlog.coverImageKey || ''
+      logger.info('Existing blog found', { oldCoverImageKey })
     }
 
-    // Handle cover image upload if provided
+    // Upload temporary image if provided
+    let tempImageResult = null
     if (coverImage) {
-      // Convert file to buffer
-      const bytes = await coverImage.arrayBuffer()
-      const buffer = Buffer.from(bytes)
-
-      // Create a temporary filename with UUID
-      const fileExtension = coverImage.name.split('.').pop()
-      const tempFilename = `temp_${uuidv4()}_cover-image.${fileExtension}`
-
-      // Upload to MinIO with metadata
-      await uploadFile(bucketName, tempFilename, buffer, {
-        'Content-Type': coverImage.type || 'application/octet-stream',
-        'Original-Name': coverImage.name,
-        'Upload-Date': new Date().toISOString(),
-      })
-
-      tempCoverImageKey = tempFilename
-      coverImageKey = tempFilename // Initially use temp filename
-      coverImageUrl = getPublicFileUrl(bucketName, tempFilename)
+      logger.info('Starting temporary image upload')
+      try {
+        tempImageResult = await uploadTempImage({
+          bucketName,
+          file: coverImage,
+          tempImagesPath,
+        })
+        logger.info('Temporary image upload successful', {
+          tempFilename: tempImageResult.tempFilename,
+        })
+      } catch (error) {
+        logger.error('Temporary image upload failed', { error: JSON.stringify(error) })
+        throw error
+      }
     }
 
     const dataToSave = {
@@ -75,64 +76,59 @@ export async function POST(request: NextRequest) {
       featured,
       tags,
       isDraft,
-      ...(coverImageUrl && { coverImage: coverImageUrl }),
-      ...(coverImageKey && { coverImageKey }),
+      ...(tempImageResult && {
+        coverImage: tempImageResult.coverImage,
+        coverImageKey: tempImageResult.coverImageKey,
+      }),
     }
+    logger.info('Preparing to save blog data', { targetBlogId })
 
     let savedArticle
-    if (existingBlog) {
-      // Update existing blog
-      Object.assign(existingBlog, dataToSave)
-      savedArticle = await existingBlog.save()
-    } else {
-      // Create new blog
-      const newArticle = new BlogModels(dataToSave)
-      savedArticle = await newArticle.save()
+    try {
+      if (existingBlog) {
+        // Update existing blog
+        logger.info('Updating existing blog')
+        Object.assign(existingBlog, dataToSave)
+        savedArticle = await existingBlog.save()
+      } else {
+        // Create new blog
+        logger.info('Creating new blog')
+        const newArticle = new BlogModels(dataToSave)
+        savedArticle = await newArticle.save()
+      }
+      logger.info('Blog saved successfully', { blogId: savedArticle.id })
+    } catch (error) {
+      logger.error('Failed to save blog', { error: JSON.stringify(error) })
+      throw error
     }
 
-    // If we have a temporary cover image and the blog was created/updated successfully,
-    // upload it to the final location
-    if (tempCoverImageKey && savedArticle) {
-      const fileExtension = tempCoverImageKey.split('.').pop()
-      // Add timestamp salt to prevent caching
-      const timestamp = Date.now()
-      const finalFilename = `${savedArticle.id}_${timestamp}_cover-image.${fileExtension}`
-
+    // If we have a temporary image and the blog was saved successfully,
+    // move it to the final location
+    if (tempImageResult && savedArticle) {
+      logger.info('Starting final image move', {
+        tempFilename: tempImageResult.tempFilename,
+        blogId: savedArticle.id,
+      })
       try {
-        // Get the temporary file
-        const tempFile = await minioClient.getObject(bucketName, tempCoverImageKey)
-        const chunks: Buffer[] = []
-        for await (const chunk of tempFile) {
-          chunks.push(chunk)
-        }
-        const fileBuffer = Buffer.concat(chunks)
-
-        // Upload the file to the final location
-        await uploadFile(bucketName, finalFilename, fileBuffer, {
-          'Content-Type': coverImage?.type || 'application/octet-stream',
-          'Original-Name': coverImage?.name || finalFilename,
-          'Upload-Date': new Date().toISOString(),
+        const finalImageResult = await moveToFinalLocation({
+          bucketName,
+          tempFilename: tempImageResult.tempFilename,
+          finalImagesPath: blogImagesPath,
+          entityId: savedArticle.id,
+          oldImageKey: oldCoverImageKey,
+          file: coverImage,
         })
 
-        // Make the new file public
-        await makeFilePublic(bucketName, finalFilename)
-
-        // Delete the temporary file
-        await deleteFile(bucketName, tempCoverImageKey)
-
-        // Queue deletion of the old cover image if it exists and is different from the new one
-        if (oldCoverImageKey && oldCoverImageKey !== finalFilename) {
-          queueFileDeletion(bucketName, oldCoverImageKey)
-        }
-
-        // Update the blog with the new file information and save to DB
-        savedArticle.coverImageKey = finalFilename
-        savedArticle.coverImage = getPublicFileUrl(bucketName, finalFilename)
+        // Update the blog with the final file information
+        savedArticle.coverImageKey = finalImageResult.coverImageKey
+        savedArticle.coverImage = finalImageResult.coverImage
         await savedArticle.save()
+        logger.info('Final image move successful', {
+          finalFilename: finalImageResult.coverImageKey,
+        })
       } catch (error) {
-        logger.error('Error processing cover image:', error)
-        // If processing fails, we'll keep using the temporary file
-        // The blog will still work, just with a less ideal filename
+        logger.error('Final image move failed', { error: JSON.stringify(error) })
+        throw error
       }
     }
 
@@ -144,7 +140,11 @@ export async function POST(request: NextRequest) {
       { status: 200 }
     )
   } catch (error) {
-    logger.error('Error processing blog post:', error.message)
+    logger.error('Error processing blog post:', {
+      error: JSON.stringify(error),
+      stack: error.stack,
+      message: error.message,
+    })
     return NextResponse.json(
       { success: false, message: 'Failed to process blog post' },
       { status: 500 }

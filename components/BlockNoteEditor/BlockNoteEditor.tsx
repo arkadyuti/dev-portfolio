@@ -65,22 +65,22 @@ export default function BlockNoteEditorLocal({
   const handleOnChange = async () => {
     const blocks = editor.document
     const html = await editor.blocksToFullHTML(blocks)
-    
+
     // Check for deleted images
     if (onImageDelete && initialContent) {
       const currentImages = blocks
         .filter((block) => block.type === 'image')
         .map((block) => block.props.url)
-      
+
       const initialImages = initialContent
         .filter((block) => block.type === 'image')
         .map((block) => block.props.url)
-      
+
       // Find images that were in initialContent but not in current content
       const deletedImages = initialImages.filter((url) => !currentImages.includes(url))
       deletedImages.forEach((url) => onImageDelete(url))
     }
-    
+
     onDataChange(blocks, html)
   }
 

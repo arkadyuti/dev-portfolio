@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { v4 as uuidv4 } from 'uuid'
-import { minioClient, uploadFile, makeFilePublic, getPublicFileUrl, deleteFile } from '@/lib/minio'
 import ProjectModels from 'models/project'
 import { logger } from '@/lib/logger'
+import { uploadTempImage, moveToFinalLocation } from '@/lib/image-upload'
 
 export async function POST(request: NextRequest) {
   try {
@@ -20,12 +20,10 @@ export async function POST(request: NextRequest) {
     const liveUrl = formData.get('liveUrl') || ''
     const status = formData.get('status') || 'completed'
 
-    let coverImageKey = ''
-    let coverImageUrl = ''
-    let tempCoverImageKey = ''
-
     const targetProjectId = projectId ? projectId : uuidv4()
     const bucketName = process.env.MINIO_IMAGE_BUCKET
+    const tempImagesPath = 'temp-images'
+    const projectImagesPath = 'project-images'
 
     // For existing project, fetch the current data to handle old image cleanup
     let existingProject = null
@@ -39,26 +37,14 @@ export async function POST(request: NextRequest) {
       oldCoverImageKey = existingProject.coverImageKey || ''
     }
 
-    // Handle cover image upload if provided
+    // Upload temporary image if provided
+    let tempImageResult = null
     if (coverImage) {
-      // Convert file to buffer
-      const bytes = await coverImage.arrayBuffer()
-      const buffer = Buffer.from(bytes)
-
-      // Create a temporary filename with UUID
-      const fileExtension = coverImage.name.split('.').pop()
-      const tempFilename = `temp_${uuidv4()}_cover-image.${fileExtension}`
-
-      // Upload to MinIO with metadata
-      await uploadFile(bucketName, tempFilename, buffer, {
-        'Content-Type': coverImage.type || 'application/octet-stream',
-        'Original-Name': coverImage.name,
-        'Upload-Date': new Date().toISOString(),
+      tempImageResult = await uploadTempImage({
+        bucketName,
+        file: coverImage,
+        tempImagesPath,
       })
-
-      tempCoverImageKey = tempFilename
-      coverImageKey = tempFilename // Initially use temp filename
-      coverImageUrl = getPublicFileUrl(bucketName, tempFilename)
     }
 
     const dataToSave = {
@@ -71,8 +57,10 @@ export async function POST(request: NextRequest) {
       githubUrl,
       liveUrl,
       status,
-      ...(coverImageUrl && { coverImage: coverImageUrl }),
-      ...(coverImageKey && { coverImageKey }),
+      ...(tempImageResult && {
+        coverImage: tempImageResult.coverImage,
+        coverImageKey: tempImageResult.coverImageKey,
+      }),
     }
 
     let savedProject
@@ -86,55 +74,22 @@ export async function POST(request: NextRequest) {
       savedProject = await newProject.save()
     }
 
-    // If we have a temporary cover image and the project was created/updated successfully,
-    // upload it to the final location
-    if (tempCoverImageKey && savedProject) {
-      const fileExtension = tempCoverImageKey.split('.').pop()
-      // Add timestamp salt to prevent caching
-      const timestamp = Date.now()
-      const finalFilename = `${savedProject.id}_${timestamp}_cover-image.${fileExtension}`
+    // If we have a temporary image and the project was saved successfully,
+    // move it to the final location
+    if (tempImageResult && savedProject) {
+      const finalImageResult = await moveToFinalLocation({
+        bucketName,
+        tempFilename: tempImageResult.tempFilename,
+        finalImagesPath: projectImagesPath,
+        entityId: savedProject.id,
+        oldImageKey: oldCoverImageKey,
+        file: coverImage,
+      })
 
-      try {
-        // Get the temporary file
-        const tempFile = await minioClient.getObject(bucketName, tempCoverImageKey)
-        const chunks: Buffer[] = []
-        for await (const chunk of tempFile) {
-          chunks.push(chunk)
-        }
-        const fileBuffer = Buffer.concat(chunks)
-
-        // Upload the file to the final location
-        await uploadFile(bucketName, finalFilename, fileBuffer, {
-          'Content-Type': coverImage?.type || 'application/octet-stream',
-          'Original-Name': coverImage?.name || finalFilename,
-          'Upload-Date': new Date().toISOString(),
-        })
-
-        // Make the new file public
-        await makeFilePublic(bucketName, finalFilename)
-
-        // Delete the temporary file
-        await deleteFile(bucketName, tempCoverImageKey)
-
-        // Delete the old cover image if it exists and is different from the new one
-        if (oldCoverImageKey && oldCoverImageKey !== finalFilename) {
-          try {
-            await deleteFile(bucketName, oldCoverImageKey)
-          } catch (error) {
-            logger.warn(`Failed to delete old cover image: ${oldCoverImageKey}`, error)
-            // Continue execution even if delete fails
-          }
-        }
-
-        // Update the project with the new file information and save to DB
-        savedProject.coverImageKey = finalFilename
-        savedProject.coverImage = getPublicFileUrl(bucketName, finalFilename)
-        await savedProject.save()
-      } catch (error) {
-        logger.error('Error processing cover image', error)
-        // If processing fails, we'll keep using the temporary file
-        // The project will still work, just with a less ideal filename
-      }
+      // Update the project with the final file information
+      savedProject.coverImageKey = finalImageResult.coverImageKey
+      savedProject.coverImage = finalImageResult.coverImage
+      await savedProject.save()
     }
 
     return NextResponse.json(
