@@ -88,9 +88,6 @@ jobs:
             # Navigate to the services directory
             cd /root/services/
           
-            # Stop the current container (uncomment if needed)
-            # docker compose down || true
-          
             # Remove old portfolio directory if it exists
             rm -rf /root/services/portfolio
           
@@ -102,6 +99,9 @@ jobs:
           
             # Use docker-compose.yml from the deployed code instead of from /root/services/
             cd portfolio
+
+            # Stop the current container (uncomment if needed)
+            docker compose down || true
           
             # Ensure proper permissions for .next directory
             chmod -R 755 .next
