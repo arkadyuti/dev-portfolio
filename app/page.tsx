@@ -9,6 +9,9 @@ import ProjectModels, { transformToProjects } from 'models/project'
 import BlogModels, { transformToBlogs } from 'models/blog'
 import connectToDatabase from '@/lib/mongodb'
 import { logger } from '@/lib/logger'
+import { generatePersonStructuredData } from './seo'
+import siteMetadata from '@/data/siteMetadata'
+import Script from 'next/script'
 
 // Explicitly mark page as server component
 export const dynamic = 'force-dynamic'
@@ -49,8 +52,24 @@ export default async function Home() {
   const featuredProjects = await getFeaturedProjects()
   const recentPosts = await getRecentBlogPosts()
 
+  // Generate structured data for the person
+  const personStructuredData = generatePersonStructuredData({
+    name: profile.name,
+    title: 'Frontend Associate Architect',
+    description: profile.bio,
+    image: profile.profileImage,
+    url: siteMetadata.siteUrl,
+    sameAs: [siteMetadata.github, siteMetadata.linkedin, siteMetadata.x].filter(Boolean),
+  })
+
   return (
     <>
+      {/* Add structured data for person */}
+      <Script
+        id="person-structured-data"
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: personStructuredData }}
+      />
       <section className="py-20 md:py-28">
         <div className="container-custom">
           <div className="grid grid-cols-1 items-center gap-8 lg:grid-cols-12">

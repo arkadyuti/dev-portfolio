@@ -176,7 +176,7 @@ const {
 
 ### Data Fetching
 
-Data fetching uses React Query:
+Data fetching uses TanStack React Query (v5):
 
 ```typescript
 const { data, isLoading, error } = useQuery('posts', fetchPosts)
@@ -191,3 +191,35 @@ Protected routes use the ProtectedRoute component:
   <AdminComponent />
 </ProtectedRoute>
 ```
+
+## SEO and Performance
+
+### Meta Tags and Structured Data
+The application includes comprehensive SEO implementation in `app/seo.tsx`:
+
+- Open Graph meta tags for social sharing
+- Twitter Card meta tags
+- Structured data for articles and person profiles
+- Dynamic meta generation for blog posts and pages
+
+### Site Configuration
+Core site metadata is defined in `data/siteMetadata.js`:
+
+- Site title, description, and social URLs
+- Keywords for SEO
+- Analytics configuration
+- Locale and language settings
+
+### Performance Features
+- Next.js Image optimization with remote pattern support
+- Font optimization using next/font/google (Inter & Poppins)
+- Bundle analysis available via `yarn analyze`
+- Security headers configured in next.config.js
+
+## Security
+
+The application implements several security measures:
+- Content Security Policy (CSP) headers
+- CSRF protection headers
+- Image domain validation for uploads
+- Protected admin routes with authentication

@@ -66,8 +66,12 @@ export async function generateMetadata({
   return genPageMetadata({
     title: post.title,
     description: post.excerpt,
-    keywords,
     image: post.coverImage,
+    type: 'article',
+    publishedTime: new Date(post.publishedAt).toISOString(),
+    authors: [post.author],
+    tags: post.tags.map((tag) => tag.name),
+    keywords,
   })
 }
 

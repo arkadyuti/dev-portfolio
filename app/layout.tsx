@@ -74,8 +74,8 @@ export const metadata: Metadata = {
     title: siteMetadata.title,
     card: 'summary_large_image',
     images: [siteMetadata.socialBanner],
-    creator: '@' + siteMetadata.x.replace('https://twitter.com/', ''),
-    site: '@' + siteMetadata.x.replace('https://twitter.com/', ''),
+    creator: '@arkadooti',
+    site: '@arkadooti',
     description: siteMetadata.description,
   },
   verification: {

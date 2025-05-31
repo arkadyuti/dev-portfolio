@@ -8,7 +8,7 @@ let initializationAttempted = false
 function getMinioClient(): Minio.Client {
   if (!initializationAttempted) {
     initializationAttempted = true
-    
+
     if (!process.env.MINIO_ENDPOINT) {
       logger.warn('MinIO not configured: MINIO_ENDPOINT not set')
       return null as any
@@ -43,7 +43,7 @@ export { getMinioClient as minioClient }
 // Utility functions with better error handling
 export async function ensureBucket(bucketName: string) {
   const client = getMinioClient()
-  
+
   try {
     const exists = await client.bucketExists(bucketName)
     if (!exists) {
@@ -94,7 +94,7 @@ export async function getPresignedUrl(
   expirySeconds: number = 7 * 24 * 60 * 60
 ) {
   const client = getMinioClient()
-  
+
   try {
     return await client.presignedGetObject(bucketName, fileName, expirySeconds)
   } catch (error: unknown) {
@@ -147,7 +147,7 @@ interface BucketPolicy {
 // Set object policy to make specific file public
 export async function makeFilePublic(bucketName: string, fileName: string) {
   const client = getMinioClient()
-  
+
   try {
     // Get current bucket policy
     let policy: BucketPolicy
