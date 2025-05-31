@@ -1,21 +1,53 @@
 import * as Minio from 'minio'
 import logger from './logger'
 
-// Create MinIO client instance with detailed configuration
-const clientConfig = {
-  endPoint: process.env.MINIO_ENDPOINT,
-  accessKey: process.env.MINIO_KEY,
-  secretKey: process.env.MINIO_SECRET,
+// Lazy-loaded MinIO client to avoid build-time initialization issues
+let minioClient: Minio.Client | null = null
+let initializationAttempted = false
+
+function getMinioClient(): Minio.Client {
+  if (!initializationAttempted) {
+    initializationAttempted = true
+    
+    if (!process.env.MINIO_ENDPOINT) {
+      logger.warn('MinIO not configured: MINIO_ENDPOINT not set')
+      return null as any
+    }
+
+    try {
+      const clientConfig = {
+        endPoint: process.env.MINIO_ENDPOINT,
+        port: process.env.MINIO_PORT ? parseInt(process.env.MINIO_PORT) : 9000,
+        useSSL: process.env.MINIO_USE_SSL === 'true',
+        accessKey: process.env.MINIO_KEY || 'minioadmin',
+        secretKey: process.env.MINIO_SECRET || 'minioadmin',
+      }
+
+      minioClient = new Minio.Client(clientConfig)
+      logger.info('MinIO client initialized successfully')
+    } catch (error) {
+      logger.error('Failed to initialize MinIO client:', error)
+      minioClient = null
+    }
+  }
+
+  if (!minioClient) {
+    throw new Error('MinIO client not initialized. Please check your MINIO_ENDPOINT configuration.')
+  }
+
+  return minioClient
 }
 
-export const minioClient = new Minio.Client(clientConfig)
+export { getMinioClient as minioClient }
 
 // Utility functions with better error handling
 export async function ensureBucket(bucketName: string) {
+  const client = getMinioClient()
+  
   try {
-    const exists = await minioClient.bucketExists(bucketName)
+    const exists = await client.bucketExists(bucketName)
     if (!exists) {
-      await minioClient.makeBucket(bucketName)
+      await client.makeBucket(bucketName)
       logger.info(`Created bucket: ${bucketName}`)
     }
   } catch (error: unknown) {
@@ -48,7 +80,8 @@ export async function uploadFile(
   try {
     await ensureBucket(bucketName)
 
-    return await minioClient.putObject(bucketName, fileName, buffer, buffer.length, metadata)
+    const client = getMinioClient()
+    return await client.putObject(bucketName, fileName, buffer, buffer.length, metadata)
   } catch (error: unknown) {
     logger.error('Upload failed:', error)
     throw error
@@ -60,8 +93,10 @@ export async function getPresignedUrl(
   fileName: string,
   expirySeconds: number = 7 * 24 * 60 * 60
 ) {
+  const client = getMinioClient()
+  
   try {
-    return await minioClient.presignedGetObject(bucketName, fileName, expirySeconds)
+    return await client.presignedGetObject(bucketName, fileName, expirySeconds)
   } catch (error: unknown) {
     logger.error('Failed to generate presigned URL:', error)
     throw error
@@ -69,7 +104,8 @@ export async function getPresignedUrl(
 }
 
 export async function deleteFile(bucketName: string, fileName: string) {
-  return await minioClient.removeObject(bucketName, fileName)
+  const client = getMinioClient()
+  return await client.removeObject(bucketName, fileName)
 }
 
 export function getPublicFileUrl(bucketName: string, fileName: string): string {
@@ -110,11 +146,13 @@ interface BucketPolicy {
 
 // Set object policy to make specific file public
 export async function makeFilePublic(bucketName: string, fileName: string) {
+  const client = getMinioClient()
+  
   try {
     // Get current bucket policy
     let policy: BucketPolicy
     try {
-      const policyJson = await minioClient.getBucketPolicy(bucketName)
+      const policyJson = await client.getBucketPolicy(bucketName)
       policy = JSON.parse(policyJson) as BucketPolicy
     } catch (error: unknown) {
       // If no policy exists, create a new one
@@ -167,7 +205,7 @@ export async function makeFilePublic(bucketName: string, fileName: string) {
       publicReadStatement.Resource.push(resource)
     }
 
-    await minioClient.setBucketPolicy(bucketName, JSON.stringify(policy))
+    await client.setBucketPolicy(bucketName, JSON.stringify(policy))
 
     // Return the permanent public URL
     return getPublicFileUrl(bucketName, fileName)

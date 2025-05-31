@@ -16,6 +16,7 @@ jobs:
         with:
           node-version: '18'
           cache: 'yarn'
+          cache-dependency-path: yarn.lock
 
       - name: Create .env file
         run: |
@@ -27,23 +28,21 @@ jobs:
           echo "MINIO_SECRET=${{ secrets.MINIO_SECRET }}" >> .env
           echo "MONGODB_URI=${{ secrets.MONGODB_URI }}" >> .env
 
-      - name: Install dependencies
-        run: yarn install --frozen-lockfile
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
 
-      - name: Build application
-        run: |
-          echo "Building Next.js application..."
-          yarn build
-          # Ensure .next directory is properly generated
-          if [ ! -d ".next" ]; then
-            echo "Error: .next directory not found after build"
-            exit 1
-          fi
-          # Verify static files
-          if [ ! -d ".next/static" ]; then
-            echo "Error: .next/static directory not found"
-            exit 1
-          fi
+      - name: Build Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          push: false
+          tags: portfolio:latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          outputs: type=docker,dest=/tmp/portfolio-image.tar
+
+      - name: Load Docker image
+        run: docker load -i /tmp/portfolio-image.tar
 
       - name: Set up SSH
         uses: shimataro/ssh-key-action@v2
@@ -58,27 +57,17 @@ jobs:
           ssh-keyscan -H ${{ secrets.SSH_HOST }} >> ~/.ssh/known_hosts
           chmod 600 ~/.ssh/known_hosts
 
-      - name: Create deployment archive
+      - name: Compress Docker image
         run: |
-          # Create a clean temporary directory for deployment
-          rm -rf ./deploy-temp || true
-          mkdir -p ./deploy-temp
-          
-          # Copy necessary files to the temp directory
-          rsync -av --exclude=".git" --exclude="node_modules" --exclude=".next/cache" \
-                --exclude="yarn-error.log" --exclude="*.log" \
-                ./ ./deploy-temp/
-          
-          # Create the tarball from the temp directory
-          tar -czf portfolio-deploy.tar.gz -C ./deploy-temp .
-          
-          # Clean up the temporary directory
-          rm -rf ./deploy-temp
+          echo "Compressing Docker image..."
+          gzip /tmp/portfolio-image.tar
+          mv /tmp/portfolio-image.tar.gz portfolio-image.tar.gz
 
-      - name: Transfer files to server
+      - name: Transfer Docker image to server
         run: |
-          echo "Transferring files to server..."
-          scp -o StrictHostKeyChecking=no portfolio-deploy.tar.gz ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}:/root/services/portfolio-deploy.tar.gz
+          echo "Transferring Docker image to server..."
+          scp -o StrictHostKeyChecking=no portfolio-image.tar.gz ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}:/root/services/portfolio-image.tar.gz
+          scp -o StrictHostKeyChecking=no docker-compose.yml ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}:/root/services/portfolio/docker-compose.yml
 
       - name: Deploy to production
         run: |
@@ -88,25 +77,21 @@ jobs:
             # Navigate to the services directory
             cd /root/services/
           
-            # Remove old portfolio directory if it exists
-            rm -rf /root/services/portfolio
-          
-            # Create new portfolio directory
+            # Create portfolio directory if it doesn not exist
             mkdir -p portfolio
-          
-            # Extract the new deployment
-            tar -xzf portfolio-deploy.tar.gz -C portfolio
-          
-            # Use docker-compose.yml from the deployed code instead of from /root/services/
             cd portfolio
 
-            # Stop the current container (uncomment if needed)
+            # Stop the current container
             docker compose down || true
+            
+            # Load the new Docker image
+            echo "Loading Docker image..."
+            docker load < /root/services/portfolio-image.tar.gz
+            
+            # Remove the transferred image file
+            rm -f /root/services/portfolio-image.tar.gz
           
-            # Ensure proper permissions for .next directory
-            chmod -R 755 .next
-          
-            # Start the container using the docker-compose.yml from the deployed code
+            # Start the container using the new image
             echo "Starting container..."
             docker compose up -d
           
@@ -147,9 +132,7 @@ jobs:
               exit 1
             fi
           
-            # Clean up
-            cd ..
-            rm -f portfolio-deploy.tar.gz
+            # Clean up is already done above
           
             # Verify deployment
             echo "Deployment successful! Container is running and application is responding."

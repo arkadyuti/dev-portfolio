@@ -63,7 +63,7 @@ const unoptimized = process.env.UNOPTIMIZED ? true : undefined
 module.exports = () => {
   const plugins = [withBundleAnalyzer]
   return plugins.reduce((acc, next) => next(acc), {
-    output,
+    output: output || 'standalone',
     basePath,
     reactStrictMode: true,
     trailingSlash: false,

@@ -21,6 +21,12 @@ if (!cached) {
 }
 
 async function connectToDatabase() {
+  // Skip database connection during build phase
+  const isBuildTime = process.env.NEXT_PHASE === 'phase-production-build'
+  if (isBuildTime) {
+    throw new Error('Database connection skipped during build phase')
+  }
+
   // If the connection is already established, reuse it
   if (cached.conn) {
     return cached.conn

@@ -102,7 +102,8 @@ export async function moveToFinalLocation({
   try {
     // Get the temporary file
     logger.info('Fetching temporary file')
-    const tempFile = await minioClient.getObject(bucketName, tempFilename)
+    const client = minioClient()
+    const tempFile = await client.getObject(bucketName, tempFilename)
     const chunks: Buffer[] = []
     for await (const chunk of tempFile) {
       chunks.push(chunk)
