@@ -6,15 +6,16 @@ import { toast } from '@/components/ui/sonner'
 import Link from '@/components/ui/Link'
 import { useState } from 'react'
 import { logger } from '@/lib/logger'
+import { profile } from '@/data/profile-data'
 
 export function Footer() {
   const [isLoading, setIsLoading] = useState(false)
 
   const socialLinks = [
-    { name: 'Github', href: 'https://github.com', icon: Github },
-    { name: 'LinkedIn', href: 'https://linkedin.com', icon: Linkedin },
-    { name: 'Twitter', href: 'https://twitter.com', icon: Twitter },
-    { name: 'Email', href: 'mailto:hello@example.com', icon: Mail },
+    { name: 'Github', href: profile.socialLinks.github, icon: Github },
+    { name: 'LinkedIn', href: profile.socialLinks.linkedin, icon: Linkedin },
+    { name: 'Twitter', href: profile.socialLinks.twitter, icon: Twitter },
+    { name: 'Email', href: profile.socialLinks.email, icon: Mail },
   ]
 
   const handleNewsletterSubmit = async (e: React.FormEvent) => {
