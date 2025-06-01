@@ -1,12 +1,5 @@
 import mongoose, { Schema, models, Document, Model } from 'mongoose'
 import { z } from 'zod'
-import { logger } from '@/lib/logger'
-
-// Define Tag interface
-interface Tag {
-  id: string
-  name: string
-}
 
 // Zod schema for project validation and transformation
 export const projectSchema = z.object({
@@ -46,20 +39,8 @@ export const transformToType = <T>(
   if (!doc) return null
 
   // Handle both Mongoose documents and plain objects
-  const data = 'toObject' in doc ? (doc as Document).toObject() : doc
-
-  // Map _id to id for MongoDB documents
-  const transformedData = {
-    ...data,
-    id: data._id?.toString() || data.id,
-  }
-
-  try {
-    return schema.parse(transformedData)
-  } catch (error) {
-    logger.error('Schema validation error', error)
-    return null
-  }
+  const data = 'toObject' in doc && typeof doc.toObject === 'function' ? doc.toObject() : doc
+  return schema.parse(data)
 }
 
 // Utility function to transform and validate Mongoose document to IProject
@@ -78,6 +59,11 @@ export const transformToProjects = (docs: ProjectDocument[]): IProject[] => {
 
 const ProjectSchema = new Schema<ProjectDocument>(
   {
+    id: {
+      type: String,
+      required: true,
+      unique: true,
+    },
     title: {
       type: String,
       required: [true, 'Please provide a title for this project'],
