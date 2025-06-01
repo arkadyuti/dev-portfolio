@@ -122,7 +122,7 @@ Deletes a blog post and its associated images.
 
 ## Frontend Components
 
-### Blog Page (`app/blog/page.tsx`)
+### Blog Page (`app/blogs/page.tsx`)
 
 Displays a list of published blog posts from the database with pagination.
 
@@ -138,7 +138,7 @@ Features:
   - Publication date
   - Tags
 
-### Blog Post Page (`app/blog/[slug]/page.tsx`)
+### Blog Post Page (`app/blogs/[slug]/page.tsx`)
 
 Displays a single blog post.
 

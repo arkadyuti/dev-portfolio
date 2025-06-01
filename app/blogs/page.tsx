@@ -106,7 +106,7 @@ export default async function BlogPage({
 
         {/* Search and filter section */}
         <div className="mb-10 space-y-6">
-          <form action="/blog" method="GET" className="flex gap-2">
+          <form action="/blogs" method="GET" className="flex gap-2">
             <Input
               placeholder="Search posts..."
               name="q"
@@ -119,7 +119,7 @@ export default async function BlogPage({
             </Button>
             {searchQuery && (
               <Button variant="ghost">
-                <Link href="/blog">Clear</Link>
+                <Link href="/blogs">Clear</Link>
               </Button>
             )}
           </form>
@@ -128,7 +128,7 @@ export default async function BlogPage({
             {tags.map((tag) => (
               <Link
                 key={tag.id}
-                href={`/blog${selectedTagId === tag.name ? '' : `?tag=${tag.name}`}${searchQuery ? `&q=${searchQuery}` : ''}`}
+                href={`/blogs${selectedTagId === tag.name ? '' : `?tag=${tag.name}`}${searchQuery ? `&q=${searchQuery}` : ''}`}
                 className="transition-colors"
               >
                 <Badge
@@ -161,7 +161,7 @@ export default async function BlogPage({
         {blogs.length > 0 ? (
           <div className="mb-10 grid grid-cols-1 gap-8 md:grid-cols-2 lg:grid-cols-3">
             {blogs.map((post) => (
-              <Link key={post.id} href={`/blog/${post.slug}`} className="blog-card group block">
+              <Link key={post.id} href={`/blogs/${post.slug}`} className="blog-card group block">
                 <div className="aspect-video overflow-hidden">
                   <Image
                     src={post.coverImage}
@@ -199,7 +199,7 @@ export default async function BlogPage({
           <div className="py-10 text-center">
             <p className="text-xl text-muted-foreground">No posts found matching your criteria.</p>
             <Button variant="outline" className="mt-4">
-              <Link href="/blog">Reset filters</Link>
+              <Link href="/blogs">Reset filters</Link>
             </Button>
           </div>
         )}
@@ -211,7 +211,7 @@ export default async function BlogPage({
               {currentPage > 1 && (
                 <PaginationItem>
                   <PaginationLink
-                    href={`/blog?page=${currentPage - 1}${selectedTagId ? `&tag=${selectedTagId}` : ''}${searchQuery ? `&q=${searchQuery}` : ''}`}
+                    href={`/blogs?page=${currentPage - 1}${selectedTagId ? `&tag=${selectedTagId}` : ''}${searchQuery ? `&q=${searchQuery}` : ''}`}
                     className="cursor-pointer"
                   >
                     Previous
@@ -222,7 +222,7 @@ export default async function BlogPage({
               {Array.from({ length: pagination.totalPages }, (_, i) => i + 1).map((page) => (
                 <PaginationItem key={page}>
                   <PaginationLink
-                    href={`/blog?page=${page}${selectedTagId ? `&tag=${selectedTagId}` : ''}${searchQuery ? `&q=${searchQuery}` : ''}`}
+                    href={`/blogs?page=${page}${selectedTagId ? `&tag=${selectedTagId}` : ''}${searchQuery ? `&q=${searchQuery}` : ''}`}
                     isActive={page === currentPage}
                     className="cursor-pointer"
                   >
@@ -234,7 +234,7 @@ export default async function BlogPage({
               {currentPage < pagination.totalPages && (
                 <PaginationItem>
                   <PaginationLink
-                    href={`/blog?page=${currentPage + 1}${selectedTagId ? `&tag=${selectedTagId}` : ''}${searchQuery ? `&q=${searchQuery}` : ''}`}
+                    href={`/blogs?page=${currentPage + 1}${selectedTagId ? `&tag=${selectedTagId}` : ''}${searchQuery ? `&q=${searchQuery}` : ''}`}
                     className="cursor-pointer"
                   >
                     Next

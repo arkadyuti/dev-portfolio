@@ -93,7 +93,7 @@ export default async function BlogDetail({ params }: { params: Promise<{ slug: s
     image: post.coverImage,
     publishedTime: new Date(post.publishedAt).toISOString(),
     authorName: post.author,
-    url: `/blog/${post.slug}`,
+    url: `/blogs/${post.slug}`,
   })
 
   return (
@@ -110,7 +110,7 @@ export default async function BlogDetail({ params }: { params: Promise<{ slug: s
           {/* Back to blog */}
           <div className="mb-8">
             <Button variant="ghost" asChild className="pl-0 transition-all duration-200 hover:pl-2">
-              <Link href="/blog" className="flex items-center gap-2">
+              <Link href="/blogs" className="flex items-center gap-2">
                 <ArrowLeft className="h-4 w-4" />
                 Back to all posts
               </Link>
@@ -145,7 +145,7 @@ export default async function BlogDetail({ params }: { params: Promise<{ slug: s
 
             <div className="mb-8 flex flex-wrap gap-2">
               {post.tags.map((tag) => (
-                <Link key={tag.id} href={`/blog?tag=${tag.id}`}>
+                <Link key={tag.id} href={`/blogs?tag=${tag.id}`}>
                   <Badge variant="outline" className="hover:bg-secondary">
                     {tag.name}
                   </Badge>
@@ -181,7 +181,7 @@ export default async function BlogDetail({ params }: { params: Promise<{ slug: s
             <h3 className="mb-4 text-lg font-semibold">Tags</h3>
             <div className="flex flex-wrap gap-2">
               {post.tags.map((tag) => (
-                <Link key={tag.id} href={`/blog?tag=${tag.id}`}>
+                <Link key={tag.id} href={`/blogs?tag=${tag.name}`}>
                   <Badge variant="outline" className="hover:bg-secondary">
                     {tag.name}
                   </Badge>
@@ -202,7 +202,7 @@ export default async function BlogDetail({ params }: { params: Promise<{ slug: s
               {relatedPosts.map((relatedPost) => (
                 <Link
                   key={relatedPost.id}
-                  href={`/blog/${relatedPost.slug}`}
+                  href={`/blogs/${relatedPost.slug}`}
                   className="blog-card group block"
                 >
                   <div className="aspect-video overflow-hidden">

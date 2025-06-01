@@ -146,7 +146,7 @@ export async function POST(request: NextRequest) {
       message: error.message,
     })
     return NextResponse.json(
-      { success: false, message: 'Failed to process blog post' },
+      { success: false, message: 'Failed to process blog post', error: error.message },
       { status: 500 }
     )
   }

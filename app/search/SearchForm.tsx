@@ -124,7 +124,7 @@ export default function SearchForm({ initialQuery = '', initialResults }: Search
                   {results.blogs.map((post) => (
                     <Link
                       key={post.id}
-                      href={`/blog/${post.slug}`}
+                      href={`/blogs/${post.slug}`}
                       className="block rounded-lg border p-4 transition-colors hover:bg-secondary/50"
                     >
                       <h3 className="mb-2 text-lg font-semibold">{post.title}</h3>
@@ -193,7 +193,7 @@ export default function SearchForm({ initialQuery = '', initialResults }: Search
                 {results.blogs.map((post) => (
                   <Link
                     key={post.id}
-                    href={`/blog/${post.slug}`}
+                    href={`/blogs/${post.slug}`}
                     className="block rounded-lg border p-4 transition-colors hover:bg-secondary/50"
                   >
                     <h3 className="mb-2 text-lg font-semibold">{post.title}</h3>

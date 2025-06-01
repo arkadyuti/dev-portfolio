@@ -104,7 +104,7 @@ This is a Next.js-based portfolio website that includes blog functionality, proj
 The main application directory following Next.js 13+ App Router structure:
 
 - `/api` - API routes for blog and tags
-- `/blog` - Blog-related pages
+- `/blogs` - Blog-related pages
 - `/projects` - Project showcase pages
 - `/admin` - Admin dashboard
 - `/about` - About page

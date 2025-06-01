@@ -74,7 +74,7 @@ export function Footer() {
               <Link href="/" className="transition-colors hover:text-primary">
                 Home
               </Link>
-              <Link href="/blog" className="transition-colors hover:text-primary">
+              <Link href="/blogs" className="transition-colors hover:text-primary">
                 Blog
               </Link>
               <Link href="/about" className="transition-colors hover:text-primary">

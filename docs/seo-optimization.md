@@ -142,7 +142,7 @@ To improve performance scores:
 ### URL Structure
 
 Current structure is SEO-friendly:
-- `/blog/[slug]` - Clean blog post URLs
+- `/blogs/[slug]` - Clean blog post URLs
 - `/projects` - Simple project listing
 - `/about` - Direct about page
 - `/tags` - Tag-based organization

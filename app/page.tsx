@@ -221,7 +221,7 @@ export default async function Home() {
           <h2 className="section-heading">Recent Blog Posts</h2>
           <div className="grid grid-cols-1 gap-8 md:grid-cols-3">
             {recentPosts.map((post) => (
-              <Link key={post.id} href={`/blog/${post.slug}`} className="blog-card group block">
+              <Link key={post.id} href={`/blogs/${post.slug}`} className="blog-card group block">
                 <div className="relative aspect-video w-full overflow-hidden">
                   <Image
                     src={post.coverImage}
@@ -260,7 +260,7 @@ export default async function Home() {
           </div>
           <div className="mt-8 text-center">
             <Button asChild>
-              <Link href="/blog" className="flex items-center gap-2">
+              <Link href="/blogs" className="flex items-center gap-2">
                 View All Posts <ArrowRight className="h-4 w-4" />
               </Link>
             </Button>

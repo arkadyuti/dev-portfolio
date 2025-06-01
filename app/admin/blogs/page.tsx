@@ -190,7 +190,7 @@ const AdminBlogPage: React.FC = () => {
               filteredAndSortedBlogs.map((blog) => (
                 <TableRow key={blog.id}>
                   <TableCell className="font-medium">
-                    <Link href={`/blog/${blog.slug}`} className="hover:underline" target="_blank">
+                    <Link href={`/blogs/${blog.slug}`} className="hover:underline" target="_blank">
                       {blog.title}
                     </Link>
                   </TableCell>
