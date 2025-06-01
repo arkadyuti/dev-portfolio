@@ -22,9 +22,24 @@ export async function processImage(
       lossless = false,
     } = options
 
+    logger.info('Processing image with options', {
+      maxWidth,
+      compressionLevel,
+      quality,
+      useMozjpeg,
+      lossless,
+    })
+
     // Get image metadata
     const metadata = await sharp(buffer).metadata()
     const originalSize = buffer.length
+
+    logger.info('Original image metadata', {
+      format: metadata.format,
+      width: metadata.width,
+      height: metadata.height,
+      size: originalSize,
+    })
 
     // Only resize if maxWidth is provided and image is larger
     let processedImage = sharp(buffer)
@@ -34,6 +49,7 @@ export async function processImage(
         fit: 'inside',
         withoutEnlargement: true,
       })
+      logger.info('Resizing image to width', { maxWidth })
     }
 
     let processedBuffer: Buffer
@@ -46,6 +62,7 @@ export async function processImage(
           palette: true,
         })
         .toBuffer()
+      logger.info('Processed PNG image', { compressionLevel })
     }
     // For JPEG images
     else if (metadata.format === 'jpeg' || metadata.format === 'jpg') {
@@ -57,6 +74,7 @@ export async function processImage(
           optimizeScans: true,
         })
         .toBuffer()
+      logger.info('Processed JPEG image', { quality, useMozjpeg })
     }
     // For WebP images
     else if (metadata.format === 'webp') {
@@ -67,18 +85,31 @@ export async function processImage(
           effort: 4,
         })
         .toBuffer()
+      logger.info('Processed WebP image', { lossless, quality })
     }
     // For other formats
     else {
+      logger.info('Unsupported format, returning original', { format: metadata.format })
       return buffer
     }
 
+    const processedSize = processedBuffer.length
+    const compressionRatio = ((originalSize - processedSize) / originalSize) * 100
+
+    logger.info('Image processing results', {
+      originalSize,
+      processedSize,
+      compressionRatio: `${compressionRatio.toFixed(2)}%`,
+    })
+
     // Only return processed buffer if it's actually smaller
     if (processedBuffer.length < originalSize) {
+      logger.info('Using processed image (smaller size)')
       return processedBuffer
     }
 
     // Return original if processing didn't reduce size
+    logger.info('Using original image (processing did not reduce size)')
     return buffer
   } catch (error) {
     logger.error('Error processing image', error)

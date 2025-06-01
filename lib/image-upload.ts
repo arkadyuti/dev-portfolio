@@ -2,6 +2,10 @@ import { v4 as uuidv4 } from 'uuid'
 import { minioClient, uploadFile, makeFilePublic, getPublicFileUrl, deleteFile } from '@/lib/minio'
 import { queueFileDeletion } from '@/lib/background-tasks'
 import logger from '@/lib/logger'
+import fs from 'fs'
+import path from 'path'
+import { processImage } from './image-utils'
+import { logger as processLogger } from './logger'
 
 interface ImageUploadConfig {
   bucketName: string
@@ -153,5 +157,52 @@ export async function moveToFinalLocation({
       coverImageKey: tempFilename,
       coverImage: getPublicFileUrl(bucketName, tempFilename),
     }
+  }
+}
+
+export async function processAndUploadImage(imagePath: string) {
+  try {
+    // Read the image file
+    const buffer = fs.readFileSync(imagePath)
+    
+    // Process the image
+    const processedBuffer = await processImage(buffer, {
+      maxWidth: 1200,
+      quality: 80,
+      useMozjpeg: true,
+      lossless: true,
+    })
+
+    // Get file extension and create filename
+    const fileExtension = path.extname(imagePath).slice(1)
+    const filename = `${path.basename(imagePath)}`
+    const bucketName = process.env.MINIO_IMAGE_BUCKET || 'images'
+
+    // Upload to MinIO
+    await uploadFile(bucketName, filename, processedBuffer, {
+      'Content-Type': `image/${fileExtension}`,
+      'Original-Name': path.basename(imagePath),
+      'Upload-Date': new Date().toISOString(),
+      Processed: 'true',
+      'Original-Size': buffer.length.toString(),
+      'Processed-Size': processedBuffer.length.toString(),
+    })
+
+    // Make the file publicly accessible
+    await makeFilePublic(bucketName, filename)
+
+    // Get the public URL
+    const fileUrl = getPublicFileUrl(bucketName, filename)
+
+    processLogger.info('Image processed and uploaded successfully', {
+      originalSize: buffer.length,
+      processedSize: processedBuffer.length,
+      url: fileUrl,
+    })
+
+    return fileUrl
+  } catch (error) {
+    processLogger.error('Error processing and uploading image', error)
+    throw error
   }
 }

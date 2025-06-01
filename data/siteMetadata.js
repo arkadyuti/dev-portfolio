@@ -10,7 +10,7 @@ const siteMetadata = {
   siteRepo: 'https://github.com/arkadyuti/dev-portfolio',
   siteLogo: `${process.env.BASE_PATH || ''}/static/images/logo.png`,
   socialBanner: `${process.env.BASE_PATH || ''}/static/images/twitter-card.png`,
-  email: 'arkadooti.sarkar@gmail.com',
+  email: 'diva_diagram_4v@icloud.com',
   github: 'https://github.com/arkadyuti',
   x: 'https://x.com/arkadooti',
   linkedin: 'https://www.linkedin.com/in/arkadyuti/',
