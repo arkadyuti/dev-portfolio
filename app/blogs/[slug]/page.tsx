@@ -11,8 +11,8 @@ import { Metadata } from 'next'
 import { genPageMetadata, generateArticleStructuredData } from '../../seo'
 import Script from 'next/script'
 import logger from '@/lib/logger'
-import "@blocknote/core/fonts/inter.css";
-import "@blocknote/mantine/style.css";
+import '@blocknote/core/fonts/inter.css'
+import '@blocknote/mantine/style.css'
 
 // Server-side data fetching
 async function getBlogPost(slug: string): Promise<IBlog | null> {

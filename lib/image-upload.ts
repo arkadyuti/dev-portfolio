@@ -164,7 +164,7 @@ export async function processAndUploadImage(imagePath: string) {
   try {
     // Read the image file
     const buffer = fs.readFileSync(imagePath)
-    
+
     // Process the image
     const processedBuffer = await processImage(buffer, {
       maxWidth: 1200,

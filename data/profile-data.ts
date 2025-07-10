@@ -14,43 +14,45 @@ export interface Profile {
     category: string
     items: string[]
   }[]
+  aboutPageMetadata: {
+    title: string
+    description: string
+    keywords: string
+  }
 }
 
 export const profile: Profile = {
-  name: "Arkadyuti Sarkar",
-  title: "Frontend Associate Architect",
-  bio: "I'm a passionate frontend architect with expertise in building scalable, performant web applications. I specialize in modern JavaScript frameworks and love creating exceptional user experiences.",
+  name: "Frontend Associate",
+  title: "Architect @ Tekion",
+  bio: "Associate Architect at Tekion with 9+ years building AI-powered developer workflows, enterprise CI/CD systems, and IoT platforms. Currently developing AI frameworks using Model Context Protocol (MCP) and architecting solutions that scale from 3 to 250+ developers.",
   longBio: `
 # About Me
 
-I'm a frontend associate architect with over 5 years of experience in building modern web applications. I specialize in creating scalable frontend architectures that balance performance, developer experience, and maintainability.
+Associate Architect at Tekion, deeply involved in exploring how AI can transform developer workflows. Currently working with Model Context Protocol (MCP) to build intelligent agents that understand code context and development patterns.
+
+My technical journey has been shaped by a simple belief: good architecture makes hard problems feel easy. Whether it's designing microservices that scale, optimizing Docker builds, or implementing MQTT for real-time IoT communication, I focus on creating solutions that developers actually want to use.
 
 ## My Approach
 
-I believe in taking a thoughtful approach to frontend development that considers the entire lifecycle of an application. This means:
+I've worked across the full stack - from React and TypeScript on the frontend to Golang & Node.js on the backend. But what really excites me is the infrastructure layer: CI/CD pipelines, containerization, cloud architecture. There's something satisfying about watching a well-orchestrated system handle complexity gracefully.
 
-- Writing clean, maintainable code that others can easily understand
-- Building flexible architectures that can evolve with changing requirements
-- Focusing on performance and accessibility from day one
-- Choosing the right tools for each specific project rather than following trends
+Recent explorations include integrating LLMs into development workflows, building event-driven architectures with Kafka, and finding the right balance between automation and human judgment in AI systems.
 
 ## Professional Journey
 
-My journey began as a UI designer, which gave me a strong foundation in user experience and interface design. 
-I transitioned to frontend development, where I found my passion for translating designs into functional, accessible code.
+Over 9+ years, I've scaled teams from 3 to 35+ engineers while architecting solutions adopted by 250+ developers organization-wide. From building IoT platforms deployed across General Motors dealerships to achieving 50% build time reduction through Docker optimization, I've consistently focused on making engineering more enjoyable and efficient.
 
-As I progressed in my career, I became increasingly interested in the architectural aspects of frontend development—how to structure applications 
-that can scale effectively and remain maintainable over time.
-
-Today, as a Frontend Associate Architect, I work at the intersection of design, development, and architecture. I help teams implement 
-best practices, establish conventions, and build robust frontend systems that serve both users and developers well.
+Key achievements include:
+- Core contributor to AI workflow framework using Model Context Protocol (MCP)
+- Reduced OEM deployment cycles from 6+ months to weeks through platform engineering
+- Built Connected Displays IoT solution handling millions of MQTT requests
+- Achieved 4x cost reduction through build-once, promote-everywhere CI/CD strategy
 
 ## Beyond Coding
 
-Outside of my core work, I enjoy engaging in discussions around frontend technologies and sharing knowledge through mentoring junior developers. 
-I'm also passionate about exploring Golang, diving into IoT experiments, and tinkering with new tech. 
-In my downtime, you'll often find me gaming on my PC or PS5—it's my way of relaxing and staying inspired by great user experiences. 
-Feel free to reach out!
+I believe the best code is the code you don't have to write, and the best systems are the ones that feel invisible to their users. Always interested in discussions about system design, developer tooling, or how we can make engineering more enjoyable.
+
+Outside of work, I enjoy gaming on my PC or PS5—it's my way of relaxing and staying inspired by great user experiences. Feel free to reach out!
   `,
   profileImage: "https://minio-api.3027622.siliconpin.com/portfolio/arkadyuti-sarkar.jpg",
   socialLinks: {
@@ -61,32 +63,41 @@ Feel free to reach out!
   },
   skills: [
     {
-      category: "Frontend Frameworks",
-      items: ["React", "Angular", "Next.js", "Vue.js"]
+      category: "Frontend Development",
+      items: ["React.js (9+ years)", "Next.js", "TypeScript", "Redux", "Tailwind CSS", "HTML5", "CSS3", "JavaScript (ES6+)", "Webpack"]
     },
     {
-      category: "Languages",
-      items: ["TypeScript", "JavaScript (ES6+)", "HTML5", "CSS3/SASS/LESS"]
+      category: "Backend Development",
+      items: ["Golang", "Node.js (8+ years)", "RESTful APIs", "Microservices Architecture", "Python", "PHP"]
     },
     {
-      category: "State Management",
-      items: ["Redux", "Context API", "React Query"]
+      category: "Cloud & DevOps",
+      items: ["AWS (EC2, S3, Lambda, IoT Core)", "Docker", "CI/CD Pipeline Design", "Infrastructure as Code", "Jenkins"]
     },
     {
-      category: "UI Libraries",
-      items: ["Tailwind CSS", "Material UI", "Styled Components"]
+      category: "Database & Messaging",
+      items: ["MongoDB", "MySQL", "Redis", "MQTT", "SQS"]
     },
     {
-      category: "Testing",
-      items: ["Jest", "React Testing Library"]
+      category: "AI & Emerging Tech",
+      items: ["Model Context Protocol (MCP)", "AI/ML Integration", "LLM Implementation", "Prompt Engineering"]
     },
     {
-      category: "Build Tools",
-      items: ["Webpack", "Vite", "Babel", "ESLint", "Prettier"]
+      category: "IoT & Hardware",
+      items: ["IoT Architecture", "MQTT Protocol", "OTA Updates", "Android Development", "Remote Debugging"]
     },
     {
-      category: "Architecture",
-      items: ["Micro Frontends", "Component Libraries", "Design Systems", "Progressive Web Apps", "Container Orchestration"]
+      category: "Testing & Quality",
+      items: ["Jest", "ESLint", "Unit Testing", "Integration Testing", "Performance Testing"]
+    },
+    {
+      category: "Architecture & Leadership",
+      items: ["Component Libraries", "Design Systems", "Technical Leadership", "Team Scaling", "Mentoring", "Cross-functional Collaboration"]
     }
-  ]
+  ],
+  aboutPageMetadata: {
+    title: 'About Me',
+    description: 'Learn more about me, my skills, and my experience as an Associate Architect at Tekion specializing in AI-powered developer workflows, enterprise CI/CD systems, and IoT platforms.',
+    keywords: 'associate architect, AI developer workflows, Model Context Protocol, MCP, enterprise architecture, CI/CD optimization, IoT platforms, technical leadership, about me, skills, experience, portfolio'
+  }
 }

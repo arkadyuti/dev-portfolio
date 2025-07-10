@@ -45,7 +45,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const blogRoutes = []
   // Skip dynamic routes during build if MongoDB is not available
   const isBuildTime = process.env.NEXT_PHASE === 'phase-production-build'
-  
+
   if (!isBuildTime) {
     try {
       await connectToDatabase()
