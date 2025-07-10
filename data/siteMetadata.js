@@ -6,7 +6,7 @@ const siteMetadata = {
   description: 'Associate Architect at Tekion with 9+ years building AI-powered developer workflows, enterprise CI/CD systems, and IoT platforms. Expertise in Model Context Protocol (MCP), React, Next.js, TypeScript, Docker, and scalable architectures.',
   language: 'en-us',
   theme: 'system', // system, dark or light
-  siteUrl: 'http://dev.visharka.us',
+  siteUrl: 'https://dev.visharka.us',
   siteRepo: 'https://github.com/arkadyuti/dev-portfolio',
   siteLogo: `${process.env.BASE_PATH || ''}/static/images/logo.png`,
   socialBanner: `${process.env.BASE_PATH || ''}/static/images/twitter-card.png`,

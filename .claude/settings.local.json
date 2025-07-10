@@ -2,7 +2,9 @@
   "permissions": {
     "allow": [
       "Bash(docker build:*)",
-      "Bash(yarn build)"
+      "Bash(yarn build)",
+      "Bash(curl:*)",
+      "Bash(yarn lint)"
     ]
   },
   "enableAllProjectMcpServers": false

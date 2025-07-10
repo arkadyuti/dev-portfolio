@@ -34,6 +34,9 @@ export function genPageMetadata({
   return {
     title,
     description: description || siteMetadata.description,
+    alternates: {
+      canonical: './',
+    },
     openGraph: {
       title: `${title} | ${siteMetadata.title.split('|')[0].trim()}`,
       description: description || siteMetadata.description,
@@ -135,5 +138,38 @@ export function generatePersonStructuredData({
     image: imageUrl,
     url: pageUrl,
     sameAs: sameAs,
+  })
+}
+
+// Helper function to generate structured data for website
+export function generateWebsiteStructuredData({
+  name,
+  url,
+  description,
+  author,
+}: {
+  name: string
+  url: string
+  description: string
+  author: string
+}) {
+  return JSON.stringify({
+    '@context': 'https://schema.org',
+    '@type': 'WebSite',
+    name: name,
+    url: url,
+    description: description,
+    author: {
+      '@type': 'Person',
+      name: author,
+    },
+    potentialAction: {
+      '@type': 'SearchAction',
+      target: {
+        '@type': 'EntryPoint',
+        urlTemplate: `${url}/search?q={search_term_string}`,
+      },
+      'query-input': 'required name=search_term_string',
+    },
   })
 }

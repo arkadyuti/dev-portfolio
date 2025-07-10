@@ -5,6 +5,7 @@ import Image from 'next/image'
 import ProjectModels, { transformToProjects } from 'models/project'
 import { Tag } from '@/components/admin/SearchableTagSelect'
 import connectToDatabase from '@/lib/mongodb'
+import { profile } from '@/data/profile-data'
 
 // Force dynamic rendering
 export const dynamic = 'force-dynamic'
@@ -122,7 +123,7 @@ export default async function ProjectsPage() {
             I'm always open to discussing new projects, opportunities, or partnerships.
           </p>
           <Button size="lg" asChild>
-            <a href="mailto:john@example.com">Get In Touch</a>
+            <a href={profile.socialLinks.email}>Get In Touch</a>
           </Button>
         </div>
       </section>

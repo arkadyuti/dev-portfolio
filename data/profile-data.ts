@@ -22,8 +22,8 @@ export interface Profile {
 }
 
 export const profile: Profile = {
-  name: "Frontend Associate",
-  title: "Architect @ Tekion",
+  name: "Frontend Associate Architect",
+  title: "Associate Architect @ Tekion",
   bio: "Associate Architect at Tekion with 9+ years building AI-powered developer workflows, enterprise CI/CD systems, and IoT platforms. Currently developing AI frameworks using Model Context Protocol (MCP) and architecting solutions that scale from 3 to 250+ developers.",
   longBio: `
 # About Me

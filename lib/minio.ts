@@ -11,7 +11,7 @@ function getMinioClient(): Minio.Client {
 
     if (!process.env.MINIO_ENDPOINT) {
       logger.warn('MinIO not configured: MINIO_ENDPOINT not set')
-      return null as any
+      return null
     }
 
     try {
