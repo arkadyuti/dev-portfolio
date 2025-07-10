@@ -55,7 +55,7 @@ export default async function Home() {
   // Generate structured data for the person
   const personStructuredData = generatePersonStructuredData({
     name: profile.name,
-    title: 'Frontend Associate Architect',
+    title: profile.title,
     description: profile.bio,
     image: profile.profileImage,
     url: siteMetadata.siteUrl,

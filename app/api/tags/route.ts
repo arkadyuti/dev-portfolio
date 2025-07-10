@@ -8,7 +8,7 @@ export async function GET(request: NextRequest) {
     // Get all unique tags from blogs and projects in parallel
     const [blogs, projects] = await Promise.all([
       BlogModels.find({ isDraft: false }).select('tags').lean(),
-      ProjectModels.find({ isDraft: false }).select('tags').lean()
+      ProjectModels.find({ isDraft: false }).select('tags').lean(),
     ])
 
     // Create a Set to store unique tags

@@ -9,10 +9,9 @@ import { genPageMetadata, generatePersonStructuredData } from '../seo'
 import Script from 'next/script'
 
 export const metadata: Metadata = genPageMetadata({
-  title: 'About Me',
-  description:
-    'Learn more about me, my skills, and my experience as a Frontend Associate Architect',
-  keywords: 'frontend architect, about me, skills, experience, portfolio',
+  title: profile.aboutPageMetadata.title,
+  description: profile.aboutPageMetadata.description,
+  keywords: profile.aboutPageMetadata.keywords,
 })
 
 const AboutPage = () => {
