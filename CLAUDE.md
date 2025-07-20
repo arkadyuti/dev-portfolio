@@ -10,145 +10,91 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 # Install dependencies
 yarn install
 
-# Start development server
+# Start development server (http://localhost:3000)
 yarn dev
 
-# Build for production
+# Build for production (disables TypeScript errors in build)
 yarn build
 
 # Start production server
 yarn serve
 
-# Analyze bundle
+# Analyze bundle size
 yarn analyze
 
-# Lint code
+# Lint code with auto-fix
 yarn lint
+
+# Type checking (manual - not included in build)
+yarn typecheck
 ```
 
 ## Project Architecture
 
-This is a Next.js-based portfolio website with blog functionality, project showcase, and admin features.
+This is a Next.js 15.2.4 portfolio website with blog functionality, project showcase, and admin features using App Router architecture.
 
 ### Key Technologies
 
-- **Framework**: Next.js (App Router)
-- **Language**: TypeScript
-- **Styling**: Tailwind CSS + shadcn/ui components
-- **Authentication**: Custom auth system (Context API)
-- **Database**: MongoDB (Mongoose)
-- **Storage**: MinIO for image uploads
-- **State Management**: React Context + React Query
+- **Framework**: Next.js 15.2.4 (App Router)
+- **Language**: TypeScript 5.x
+- **Styling**: Tailwind CSS 3.4.11 + shadcn/ui components
+- **Authentication**: Custom React Context (mock auth in dev)
+- **Database**: MongoDB with Mongoose 8.15.0
+- **Storage**: MinIO for S3-compatible image uploads
+- **State Management**: React Context + TanStack Query v5
+- **Validation**: Zod schemas throughout
+- **Rich Text Editor**: BlockNote for blog content
 
-### Core Components
+### Core Features
 
 1. **Authentication System**
-
-   - Uses React Context for global auth state
-   - Mock authentication in development
-   - Protected routes with ProtectedRoute component
+   - Mock authentication in development (admin@example.com/password)
+   - React Context-based auth state management
+   - Protected routes via ProtectedRoute component
+   - Session persistence in localStorage
 
 2. **Blog System**
+   - Full CRUD operations with draft/publish states
+   - Tag-based categorization
+   - BlockNote rich text editor integration
+   - SEO-friendly slug generation with collision handling
+   - Search and filtering capabilities
 
-   - MongoDB-backed blog posts with tags
-   - Admin CRUD operations
-   - Zod validation for data integrity
-   - Markdown support for content
-
-3. **Project Showcase**
-
-   - Portfolio display for projects
+3. **Project Portfolio**
+   - Project showcase with image galleries
    - Tag-based filtering
-   - Image management with MinIO
+   - MinIO integration for image storage
 
 4. **Admin Dashboard**
-   - Protected admin routes under `/admin/*`
-   - Content management for blogs and projects
-   - Image upload functionality
+   - Protected routes under `/admin/*`
+   - Content management interface
+   - Image upload with temp → final location workflow
 
-### Important Files and Their Purpose
+### Important Implementation Details
 
-- `/contexts/AuthContext.tsx` - Authentication context provider
-- `/components/ProtectedRoute.tsx` - Route protection HOC
-- `/lib/mongodb.ts` - MongoDB connection management
-- `/models/blog.ts` - Blog schema and transformation utilities
-- `/lib/minio.ts` - MinIO client for image storage
-
-### Folder Structure
-
-- `/app` - Next.js App Router pages and API routes
-- `/components` - Reusable React components
-- `/lib` - Utility functions and services
-- `/models` - Database models
-- `/contexts` - Context providers
-- `/hooks` - Custom React hooks
-- `/public` - Static assets
-
-### Data Flow
-
-1. **API Routes**
-
-   - `/api/blog` - Blog post management
-   - `/api/blogs` - Blog listing and search
-   - `/api/tags` - Tag management
-
-2. **Authentication Flow**
-
-   - Login at `/signin`
-   - Auth state stored in localStorage
-   - Protected routes redirect to login
-
-3. **Content Management**
-   - Admin creates/edits content in the admin dashboard
-   - MongoDB stores content data
-   - MinIO stores image files
-
-## Environment Setup
-
-Required environment variables:
-
-```
-# Database
-MONGODB_URI=mongodb://localhost:27017/portfolio
-
-# Authentication (for production)
-NEXTAUTH_URL=http://localhost:3000
-NEXTAUTH_SECRET=your-secret-key
-
-# MinIO (for image storage)
-MINIO_ENDPOINT=your-minio-endpoint
-MINIO_PORT=9000
-MINIO_ACCESS_KEY=your-access-key
-MINIO_SECRET_KEY=your-secret-key
-MINIO_BUCKET=your-bucket-name
-```
-
-## Code Patterns and Conventions
-
-### Next.js 15 Page Props
-
-In Next.js 15, dynamic route parameters (`params`) and search parameters (`searchParams`) are handled as Promises in server components. Always type and handle them accordingly:
+#### Next.js 15 Async Parameters
+Dynamic route and search parameters are Promises in Next.js 15:
 
 ```typescript
-// For dynamic routes like [slug]
-export default async function PageWithSlug({ params }: { params: Promise<{ slug: string }> }) {
+// Dynamic routes
+export default async function Page({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params
   // Use slug...
 }
 
-// For pages with search parameters
-export default async function PageWithSearch({
-  searchParams,
-}: {
-  searchParams: Promise<{ [key: string]: string | string[] | undefined }>
-}) {
+// Search parameters
+export default async function Page({ searchParams }: { searchParams: Promise<{ [key: string]: string | string[] | undefined }> }) {
   const params = await searchParams
   // Use params...
 }
 ```
 
-### API Response Format
+#### Database Models
+- **Blog**: `/models/blog.ts` - Includes transform utilities for Mongoose → TypeScript
+- **Project**: `/models/project.ts` - Portfolio projects with image galleries
+- **Newsletter**: `/models/newsletter.ts` - Subscriber management
 
+#### API Response Pattern
 ```typescript
 interface ApiResponse<T> {
   success: boolean
@@ -160,66 +106,76 @@ interface ApiResponse<T> {
 }
 ```
 
-### Form Handling
+#### Image Upload Flow
+1. Upload to temp directory via `/api/upload`
+2. Save entity to database
+3. Move image from temp to final location
+4. Update entity with final image URL
 
-Forms use React Hook Form with Zod validation:
-
+#### Form Handling Pattern
 ```typescript
-const {
-  register,
-  handleSubmit,
-  formState: { errors },
-} = useForm<FormData>({
+const { register, handleSubmit, formState: { errors } } = useForm<FormData>({
   resolver: zodResolver(schema),
 })
 ```
 
-### Data Fetching
+### File Structure
 
-Data fetching uses TanStack React Query (v5):
+- `/app` - Next.js pages, API routes, layouts
+- `/components` - UI components and shadcn/ui library
+- `/contexts` - React Context providers (AuthContext)
+- `/models` - Mongoose schemas with Zod validation
+- `/lib` - Utilities (mongodb.ts, minio.ts, logger.ts)
+- `/hooks` - Custom React hooks
+- `/data` - Static data and site metadata
+- `/public` - Static assets
 
-```typescript
-const { data, isLoading, error } = useQuery('posts', fetchPosts)
+### Environment Variables
+
+```bash
+# Required
+MONGODB_URI=mongodb://localhost:27017/portfolio
+
+# MinIO Configuration
+MINIO_ENDPOINT=your-minio-endpoint
+MINIO_PORT=9000
+MINIO_ACCESS_KEY=your-access-key
+MINIO_SECRET_KEY=your-secret-key
+MINIO_BUCKET=your-bucket-name
+
+# Production Auth (currently unused)
+NEXTAUTH_URL=http://localhost:3000
+NEXTAUTH_SECRET=your-secret-key
 ```
 
-### Authentication
+### Security Features
 
-Protected routes use the ProtectedRoute component:
-
-```tsx
-<ProtectedRoute>
-  <AdminComponent />
-</ProtectedRoute>
-```
-
-## SEO and Performance
-
-### Meta Tags and Structured Data
-The application includes comprehensive SEO implementation in `app/seo.tsx`:
-
-- Open Graph meta tags for social sharing
-- Twitter Card meta tags
-- Structured data for articles and person profiles
-- Dynamic meta generation for blog posts and pages
-
-### Site Configuration
-Core site metadata is defined in `data/siteMetadata.js`:
-
-- Site title, description, and social URLs
-- Keywords for SEO
-- Analytics configuration
-- Locale and language settings
-
-### Performance Features
-- Next.js Image optimization with remote pattern support
-- Font optimization using next/font/google (Inter & Poppins)
-- Bundle analysis available via `yarn analyze`
-- Security headers configured in next.config.js
-
-## Security
-
-The application implements several security measures:
-- Content Security Policy (CSP) headers
+- Comprehensive CSP headers in next.config.js
 - CSRF protection headers
 - Image domain validation for uploads
-- Protected admin routes with authentication
+- Input validation with Zod schemas
+- Non-root user in Docker container
+
+### SEO Implementation
+
+- Dynamic meta tags in `app/seo.tsx`
+- Structured data for articles and person profiles
+- Open Graph and Twitter Card support
+- Site metadata in `data/siteMetadata.js`
+- Sitemap generation at `/sitemap.xml`
+
+### Performance Optimizations
+
+- Next.js Image component with remote patterns
+- Font optimization (Inter & Poppins via next/font)
+- Standalone Next.js output in Docker
+- React Query for efficient data fetching
+
+### Development Notes
+
+- No test framework configured
+- TypeScript strict mode is disabled
+- Build process skips TypeScript errors (`ignoreBuildErrors: true`)
+- Uses yarn as package manager
+- Docker multi-stage build for production
+- Mock authentication only - no real auth provider implemented
