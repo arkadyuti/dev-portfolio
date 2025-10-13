@@ -6,6 +6,6 @@ export async function GET() {
     success: true,
     message: 'pong',
     version: packageJson.version,
-    timestamp: new Date().toISOString()
+    timestamp: new Date().toISOString(),
   })
 }

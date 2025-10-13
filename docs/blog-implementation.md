@@ -50,6 +50,7 @@ Key fields:
 - `tags`: Array of tags associated with the blog post
 - `featured`: Boolean indicating if the blog post is featured
 - `isDraft`: Boolean indicating if the blog post is a draft
+- `views`: Number of unique views for the blog post (see [View Counter Implementation](./view-counter-implementation.md))
 
 ## API Endpoints
 
@@ -149,6 +150,7 @@ Features:
 - Related posts section
 - Author information
 - Reading time calculation
+- View counter with unique tracking
 - Social sharing buttons
 
 ### Admin Blog Editor (`app/admin/blogs/new/page.tsx`)
@@ -179,13 +181,13 @@ The blog form maintains editor state using `editorRef`:
 
 ```typescript
 const editorRef = useRef<{
-  contentRTE: any;      // Rich text editor content
-  contentImages: string[]; // List of uploaded image URLs
-  content: string;      // HTML content
+  contentRTE: any // Rich text editor content
+  contentImages: string[] // List of uploaded image URLs
+  content: string // HTML content
 }>({
   contentRTE: null,
   contentImages: [],
-  content: ''
+  content: '',
 })
 ```
 

@@ -42,6 +42,8 @@ async function connectToDatabase() {
       socketTimeoutMS: 45000,
       connectTimeoutMS: 10000,
       serverSelectionTimeoutMS: 10000,
+      heartbeatFrequencyMS: 10000,
+      retryWrites: true,
     }
 
     // Only log new connection in non-production environments or if explicitly requested

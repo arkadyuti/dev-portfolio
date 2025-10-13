@@ -1,4 +1,4 @@
-import { ArrowRight } from 'lucide-react'
+import { ArrowRight, Eye } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
@@ -264,13 +264,19 @@ export default async function Home() {
                   />
                 </div>
                 <div className="p-6">
-                  <p className="mb-2 text-sm text-muted-foreground">
-                    {new Date(post.publishedAt).toLocaleDateString('en-US', {
-                      year: 'numeric',
-                      month: 'long',
-                      day: 'numeric',
-                    })}
-                  </p>
+                  <div className="mb-2 flex items-center justify-between text-sm text-muted-foreground">
+                    <span>
+                      {new Date(post.publishedAt).toLocaleDateString('en-US', {
+                        year: 'numeric',
+                        month: 'long',
+                        day: 'numeric',
+                      })}
+                    </span>
+                    <span className="flex items-center gap-1">
+                      <Eye className="h-3 w-3" />
+                      {post.views || 0}
+                    </span>
+                  </div>
                   <h3 className="mb-2 text-xl font-bold transition-colors group-hover:text-primary">
                     {post.title}
                   </h3>

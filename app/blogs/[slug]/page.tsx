@@ -7,16 +7,19 @@ import Link from '@/components/ui/Link'
 import Image from 'next/image'
 import BlogModels, { transformToBlog, IBlog } from 'models/blog'
 import { ShareButtons } from './ShareButtons'
+import { ViewTracker } from '@/components/ViewTracker'
 import { Metadata } from 'next'
 import { genPageMetadata, generateArticleStructuredData } from '../../seo'
 import Script from 'next/script'
 import logger from '@/lib/logger'
+import connectToDatabase from '@/lib/mongodb'
 import '@blocknote/core/fonts/inter.css'
 import '@blocknote/mantine/style.css'
 
 // Server-side data fetching
 async function getBlogPost(slug: string): Promise<IBlog | null> {
   try {
+    await connectToDatabase()
     const post = await BlogModels.findOne({ slug, isDraft: false }).lean()
     if (!post) return null
     return transformToBlog(post)
@@ -28,6 +31,7 @@ async function getBlogPost(slug: string): Promise<IBlog | null> {
 
 async function getRelatedPosts(currentPostId: string): Promise<IBlog[]> {
   try {
+    await connectToDatabase()
     const posts = await BlogModels.find({
       id: { $ne: currentPostId },
       isDraft: false,
@@ -143,6 +147,8 @@ export default async function BlogDetail({ params }: { params: Promise<{ slug: s
                 <span className="mx-2 inline-block h-1 w-1 rounded-full bg-muted-foreground md:hidden"></span>
                 <span>{readingTime} min read</span>
               </span>
+
+              <ViewTracker blogId={post.id} initialViews={post.views || 0} />
             </div>
 
             <div className="mb-8 flex flex-wrap gap-2">

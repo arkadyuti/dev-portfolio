@@ -9,10 +9,11 @@ import {
   PaginationNext,
   PaginationPrevious,
 } from '@/components/ui/pagination'
-import { Search } from 'lucide-react'
+import { Search, Eye } from 'lucide-react'
 import Link from '@/components/ui/Link'
 import BlogModels, { transformToBlogs } from 'models/blog'
 import Image from 'next/image'
+import connectToDatabase from '@/lib/mongodb'
 
 // Force dynamic rendering
 export const dynamic = 'force-dynamic'
@@ -30,6 +31,8 @@ async function parseSearchParams(
 }
 
 async function getBlogs(searchParams: Promise<{ [key: string]: string | string[] | undefined }>) {
+  await connectToDatabase()
+
   const { page, tag, search } = await parseSearchParams(searchParams)
   const limit = 6
   const skip = (page - 1) * limit
@@ -173,13 +176,19 @@ export default async function BlogPage({
                   />
                 </div>
                 <div className="p-6">
-                  <p className="mb-2 text-sm text-muted-foreground">
-                    {new Date(post.publishedAt).toLocaleDateString('en-US', {
-                      year: 'numeric',
-                      month: 'long',
-                      day: 'numeric',
-                    })}
-                  </p>
+                  <div className="mb-2 flex items-center justify-between text-sm text-muted-foreground">
+                    <span>
+                      {new Date(post.publishedAt).toLocaleDateString('en-US', {
+                        year: 'numeric',
+                        month: 'long',
+                        day: 'numeric',
+                      })}
+                    </span>
+                    <span className="flex items-center gap-1">
+                      <Eye className="h-3 w-3" />
+                      {post.views || 0}
+                    </span>
+                  </div>
                   <h2 className="mb-2 text-xl font-bold transition-colors group-hover:text-primary">
                     {post.title}
                   </h2>
