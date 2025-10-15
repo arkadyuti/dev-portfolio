@@ -4,7 +4,8 @@
       "Bash(docker build:*)",
       "Bash(yarn build)",
       "Bash(curl:*)",
-      "Bash(yarn lint)"
+      "Bash(yarn lint)",
+      "Bash(yarn dev:*)"
     ]
   },
   "enableAllProjectMcpServers": false

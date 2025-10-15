@@ -10,7 +10,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 # Install dependencies
 yarn install
 
-# Start development server (http://localhost:3000)
+# Start development server (http://localhost:5005)
 yarn dev
 
 # Build for production (disables TypeScript errors in build)
@@ -25,8 +25,8 @@ yarn analyze
 # Lint code with auto-fix
 yarn lint
 
-# Type checking (manual - not included in build)
-yarn typecheck
+# Create admin user (interactive)
+yarn setup-admin
 ```
 
 ## Project Architecture
@@ -38,20 +38,25 @@ This is a Next.js 15.2.4 portfolio website with blog functionality, project show
 - **Framework**: Next.js 15.2.4 (App Router)
 - **Language**: TypeScript 5.x
 - **Styling**: Tailwind CSS 3.4.11 + shadcn/ui components
-- **Authentication**: Custom React Context (mock auth in dev)
+- **Authentication**: JWT + Refresh Tokens with Redis sessions
 - **Database**: MongoDB with Mongoose 8.15.0
+- **Session Storage**: Redis with IORedis
 - **Storage**: MinIO for S3-compatible image uploads
-- **State Management**: React Context + TanStack Query v5
+- **State Management**: TanStack Query v5
 - **Validation**: Zod schemas throughout
 - **Rich Text Editor**: BlockNote for blog content
 
 ### Core Features
 
 1. **Authentication System**
-   - Mock authentication in development (admin@example.com/password)
-   - React Context-based auth state management
-   - Protected routes via ProtectedRoute component
-   - Session persistence in localStorage
+   - JWT access tokens (15 min) + refresh tokens (7 days)
+   - Redis-backed session management with auto-expiry
+   - Rate limiting (5 login attempts per 15 min, Redis-backed)
+   - Account lockout (5 failed attempts → 30 min lock, MongoDB tracking)
+   - Password validation (min 8 chars, uppercase, lowercase, number, special char)
+   - Single admin user (database-enforced, created via `yarn setup-admin`)
+   - Edge-compatible middleware using `jose` library for JWT verification
+   - HTTP-only secure cookies for token storage
 
 2. **Blog System**
    - Full CRUD operations with draft/publish states
@@ -89,7 +94,16 @@ export default async function Page({ searchParams }: { searchParams: Promise<{ [
 }
 ```
 
+#### Authentication Architecture
+- **JWT Generation**: `lib/auth/jwt.ts` - Dual runtime support (jose for Edge, jsonwebtoken for Node.js)
+- **Session Management**: `lib/auth/session.ts` - Redis CRUD operations with TTL
+- **Rate Limiting**: `lib/auth/rate-limit.ts` - IP-based brute force protection
+- **Password Utilities**: `lib/auth/password.ts` - bcrypt hashing and validation
+- **Auth Helpers**: `lib/auth/helpers.ts` - Server-side auth utilities for components/APIs
+- **Middleware**: `middleware.ts` - Edge-compatible JWT verification protecting `/admin/*`
+
 #### Database Models
+- **User**: `/models/user.ts` - Admin user with lockout protection, single admin enforcement
 - **Blog**: `/models/blog.ts` - Includes transform utilities for Mongoose → TypeScript
 - **Project**: `/models/project.ts` - Portfolio projects with image galleries
 - **Newsletter**: `/models/newsletter.ts` - Subscriber management
@@ -123,9 +137,10 @@ const { register, handleSubmit, formState: { errors } } = useForm<FormData>({
 
 - `/app` - Next.js pages, API routes, layouts
 - `/components` - UI components and shadcn/ui library
-- `/contexts` - React Context providers (AuthContext)
-- `/models` - Mongoose schemas with Zod validation
-- `/lib` - Utilities (mongodb.ts, minio.ts, logger.ts)
+- `/models` - Mongoose schemas with Zod validation (User, Blog, Project, Newsletter)
+- `/lib` - Utilities (mongodb.ts, minio.ts, redis.ts, auth/*)
+- `/lib/auth` - Authentication utilities (jwt.ts, session.ts, password.ts, rate-limit.ts, helpers.ts)
+- `/scripts` - Setup scripts (setup-admin.ts for creating admin user)
 - `/hooks` - Custom React hooks
 - `/data` - Static data and site metadata
 - `/public` - Static assets
@@ -139,22 +154,33 @@ MONGODB_URI=mongodb://localhost:27017/portfolio
 # MinIO Configuration
 MINIO_ENDPOINT=your-minio-endpoint
 MINIO_PORT=9000
-MINIO_ACCESS_KEY=your-access-key
-MINIO_SECRET_KEY=your-secret-key
-MINIO_BUCKET=your-bucket-name
+MINIO_KEY=your-access-key
+MINIO_SECRET=your-secret-key
+MINIO_IMAGE_BUCKET=your-bucket-name
 
-# Production Auth (currently unused)
-NEXTAUTH_URL=http://localhost:3000
-NEXTAUTH_SECRET=your-secret-key
+# JWT Configuration (generate with: openssl rand -base64 32)
+JWT_ACCESS_SECRET=your-random-access-secret
+JWT_REFRESH_SECRET=your-random-refresh-secret
+
+# Redis Configuration
+REDIS_HOST=localhost
+REDIS_PORT=6379
+# Optional: REDIS_PASSWORD, REDIS_DB
 ```
 
 ### Security Features
 
-- Comprehensive CSP headers in next.config.js
-- CSRF protection headers
-- Image domain validation for uploads
-- Input validation with Zod schemas
-- Non-root user in Docker container
+- **CSP Headers**: Comprehensive security headers in next.config.js
+- **CSRF Protection**: Security headers enabled
+- **Password Security**: bcrypt hashing (10 rounds), strength validation
+- **Rate Limiting**: IP-based brute force protection (Redis-backed)
+- **Account Lockout**: Failed login tracking (MongoDB)
+- **HTTP-only Cookies**: JWT tokens not accessible via JavaScript
+- **Input Validation**: Zod schemas on all forms/APIs
+- **Image Domain Validation**: Restricted upload domains
+- **Session Management**: Redis TTL auto-expiry + manual revocation
+- **Edge Runtime**: JWT verification compatible with Next.js Edge middleware
+- **Non-root Docker**: Container runs as user `nextjs` (uid 1001)
 
 ### SEO Implementation
 
@@ -173,9 +199,10 @@ NEXTAUTH_SECRET=your-secret-key
 
 ### Development Notes
 
-- No test framework configured
-- TypeScript strict mode is disabled
-- Build process skips TypeScript errors (`ignoreBuildErrors: true`)
-- Uses yarn as package manager
-- Docker multi-stage build for production
-- Mock authentication only - no real auth provider implemented
+- **Package Manager**: Yarn (v3.6.1)
+- **TypeScript**: Strict mode disabled, build ignores errors (`ignoreBuildErrors: true`)
+- **Testing**: No test framework configured
+- **Docker**: Multi-stage build for production with standalone Next.js output
+- **Dev Server**: Runs on port 5005 (production on 3000)
+- **Admin Setup**: Single admin user created via `yarn setup-admin` script (not in .env)
+- **JWT Libraries**: `jose` for Edge runtime (middleware), `jsonwebtoken` for Node.js (API routes)

@@ -1,19 +1,32 @@
-# Blog Implementation Documentation
+# Blog System
 
-This document outlines the complete implementation of the Blog feature in the portfolio application, including image handling, data models, API endpoints, and frontend components.
+## Overview
 
-## Table of Contents
+Full-featured blog system with MongoDB storage, BlockNote rich text editor, MinIO image storage, and view tracking. Supports drafts, tags, featured posts, and SEO-friendly slugs.
 
-1. [Data Model](#data-model)
-2. [API Endpoints](#api-endpoints)
-3. [Frontend Components](#frontend-components)
-4. [Image Handling](#image-handling)
-5. [Blog Editor Implementation](#blog-editor-implementation)
-6. [Recent Blog Posts on Homepage](#recent-blog-posts-on-homepage)
+## Architecture
+
+### Data Flow
+
+1. Admin creates/edits blog via BlockNote editor (`/admin/blogs/new`)
+2. Images uploaded to MinIO via `/api/blog-content-image`
+3. Blog saved to MongoDB with content + metadata
+4. Public pages fetch from MongoDB (`/blogs`, `/blogs/[slug]`)
+5. View tracking increments on individual blog page loads
+
+### Key Files
+
+- `models/blog.ts` - MongoDB schema with Mongoose, Zod validation, transform utilities
+- `app/api/blog/route.ts` - Create/update blog (POST), list blogs (GET)
+- `app/api/blog/[slug]/route.ts` - Get blog by slug (GET)
+- `app/api/blog/[id]/route.ts` - Delete blog (DELETE)
+- `app/api/blog-content-image/route.ts` - Upload content images
+- `app/blogs/page.tsx` - Public blog list with pagination
+- `app/blogs/[slug]/page.tsx` - Individual blog post with view counter
+- `app/admin/blogs/new/page.tsx` - Blog editor (create/edit)
+- `components/BlockNoteEditor/BlockNoteEditor.tsx` - Rich text editor component
 
 ## Data Model
-
-The blog data is stored in MongoDB using the following schema (defined in `models/blog.ts`):
 
 ```typescript
 interface IBlog {
@@ -24,239 +37,159 @@ interface IBlog {
   coverImage: string
   coverImageKey?: string
   author: string
-  slug: string
-  content: string
-  contentRTE: unknown
-  contentImages: string[]
+  slug: string // Auto-generated, unique
+  content: string // HTML
+  contentRTE: unknown // BlockNote JSON
+  contentImages: string[] // Array of uploaded image URLs
   tags: Tag[]
   featured: boolean
   isDraft?: boolean
+  views?: number // Unique view count
 }
 ```
 
-Key fields:
+### Slug Generation
 
-- `id`: Unique identifier for the blog post
-- `publishedAt`: Timestamp when the blog was published
-- `title`: Blog post title
-- `excerpt`: Short summary of the blog post
-- `coverImage`: URL to the blog's main image
-- `coverImageKey`: Reference to the image in MinIO storage
-- `author`: Author of the blog post
-- `slug`: URL-friendly version of the title (auto-generated)
-- `content`: Main content of the blog post
-- `contentRTE`: Rich text editor data
-- `contentImages`: Array of image URLs used in the content
-- `tags`: Array of tags associated with the blog post
-- `featured`: Boolean indicating if the blog post is featured
-- `isDraft`: Boolean indicating if the blog post is a draft
-- `views`: Number of unique views for the blog post (see [View Counter Implementation](./view-counter-implementation.md))
+- Auto-generated from title using `github-slugger`
+- Collision handling: appends `-1`, `-2`, etc. if slug exists
+- Updated on title change
 
 ## API Endpoints
 
 ### GET /api/blogs
 
-Retrieves a list of blog posts with pagination.
+List blogs with pagination
 
-**Query Parameters:**
-
-- `page`: Page number (default: 1)
-- `limit`: Number of items per page (default: 10)
-- `fetchAll`: When set to "true", includes draft posts (admin only)
-
-**Response:**
-
-```json
-{
-  "success": true,
-  "data": [Blog],
-  "pagination": {
-    "total": number,
-    "page": number,
-    "limit": number,
-    "totalPages": number
-  }
-}
-```
+- Query: `page`, `limit`, `fetchAll=true` (includes drafts, admin only)
+- Response: `{ data: Blog[], pagination: { total, page, limit, totalPages } }`
 
 ### GET /api/blog/[slug]
 
-Retrieves a specific blog post by its slug.
+Get single blog by slug
 
-**Path Parameters:**
-
-- `slug`: The slug of the blog post to retrieve
-
-**Response:**
-
-```json
-{
-  "success": true,
-  "data": Blog
-}
-```
+- Response: `{ data: Blog }`
 
 ### POST /api/blog
 
-Creates or updates a blog post.
+Create/update blog (FormData)
 
-**Request Body (FormData):**
-
-- `title`: Blog post title
-- `author`: Author name
-- `excerpt`: Blog excerpt
-- `content`: Blog content
-- `contentRTE`: Rich text editor data
-- `contentImages`: Array of image URLs
-- `coverImage`: Cover image file
-- `tags`: Array of tags
-- `featured`: Boolean
-- `isDraft`: Boolean
+- Fields: `title`, `author`, `excerpt`, `content`, `contentRTE`, `contentImages`, `coverImage` (file), `tags`, `featured`, `isDraft`
+- Auto-generates slug from title
+- Handles cover image upload to MinIO
 
 ### DELETE /api/blog/[id]
 
-Deletes a blog post and its associated images.
+Delete blog and associated images
 
-**Path Parameters:**
+- Cleans up MinIO images (cover + content images)
 
-- `id`: The ID of the blog post to delete
+### POST /api/blog-content-image
 
-## Frontend Components
+Upload content image to MinIO
 
-### Blog Page (`app/blogs/page.tsx`)
-
-Displays a list of published blog posts from the database with pagination.
-
-Features:
-
-- Server-side data fetching from MongoDB
-- Pagination
-- Responsive grid layout for blog cards
-- Displays blog information including:
-  - Cover image
-  - Title
-  - Excerpt
-  - Publication date
-  - Tags
-
-### Blog Post Page (`app/blogs/[slug]/page.tsx`)
-
-Displays a single blog post.
-
-Features:
-
-- Server-side data fetching from MongoDB
-- Rich text content rendering
-- Related posts section
-- Author information
-- Reading time calculation
-- View counter with unique tracking
-- Social sharing buttons
-
-### Admin Blog Editor (`app/admin/blogs/new/page.tsx`)
-
-Provides a rich text editor for creating and editing blog posts.
-
-Features:
-
-- Rich text editing with BlockNoteEditor
-- Image upload and management
-- Tag management
-- Draft/publish functionality
-- Cover image upload
+- Used by BlockNote editor during content creation
+- Returns public image URL
 
 ## Image Handling
 
-### Image Upload Process
+### Storage Strategy
 
-1. When a user adds an image in the editor:
-   - The image is uploaded to `/api/blog-content-image`
-   - The uploaded image URL is returned
-   - The URL is passed to the editor for display
-   - The URL is tracked via `onImageUpload` callback
+- **MinIO S3-compatible storage** for all images
+- Cover images: Uploaded on form submission
+- Content images: Uploaded immediately when inserted in editor
+- Image tracking: `contentImages` array stores all content image URLs
 
-### State Management
+### Upload Flow
 
-The blog form maintains editor state using `editorRef`:
+1. User inserts image in BlockNote editor
+2. Image uploaded to `/api/blog-content-image` → MinIO
+3. Public URL returned and inserted in editor
+4. URL tracked via `onImageUpload` callback
+5. On blog save, all image URLs stored in `contentImages` field
 
-```typescript
-const editorRef = useRef<{
-  contentRTE: any // Rich text editor content
-  contentImages: string[] // List of uploaded image URLs
-  content: string // HTML content
-}>({
-  contentRTE: null,
-  contentImages: [],
-  content: '',
-})
-```
+### Cleanup
 
-### Image Storage
+- On blog delete: Removes cover image + all content images from MinIO
 
-- Images are stored in MinIO
-- Each image gets a unique key
-- Public URLs are generated for display
-- Image cleanup is handled on blog deletion
+## BlockNote Editor
 
-## Blog Editor Implementation
-
-### BlockNoteEditor Component
-
-Located at `components/BlockNoteEditor/BlockNoteEditor.tsx`
-
-Key features:
-
-- Rich text editing with image support
-- Image upload functionality
-- Content tracking through callbacks
+### Component (`components/BlockNoteEditor/BlockNoteEditor.tsx`)
 
 ```typescript
 interface BlockNoteEditorLocalProps {
   onDataChange: (blocks: Block[], html: string) => void
-  initialContent?: PartialBlock[] | undefined
+  initialContent?: PartialBlock[]
   onImageUpload?: (imageUrl: string) => void
 }
 ```
 
-### Form Submission
+### State Management
 
-When the form is submitted:
-
-1. All form data is collected into FormData
-2. Editor content and images are included:
-   ```typescript
-   formData.append('contentRTE', JSON.stringify(editorRef.current.contentRTE))
-   formData.append('content', editorRef.current.content)
-   formData.append('contentImages', JSON.stringify(editorRef.current.contentImages))
-   ```
-3. The complete data is sent to the server for processing
-
-## Recent Blog Posts on Homepage
-
-The homepage displays the 3 most recent blog posts from the database:
+Editor state tracked via ref in blog form:
 
 ```typescript
-// Server-side data fetching for recent blog posts
-async function getRecentBlogPosts() {
-  try {
-    await connectToDatabase()
-    const blogs = await BlogModels.find({ isDraft: false })
-      .sort({ publishedAt: -1 })
-      .limit(3)
-      .lean()
-
-    return transformToBlogs(blogs)
-  } catch (error) {
-    logger.error('Error fetching recent blog posts:', error)
-    return []
-  }
+editorRef.current = {
+  contentRTE: blockNoteJSON,
+  contentImages: ['url1', 'url2'],
+  content: htmlString,
 }
 ```
 
-Implementation details:
+### Features
 
-- Uses server-side data fetching with MongoDB
-- Filters out draft posts
-- Sorts by publication date (newest first)
-- Limits to 3 posts
-- Transforms MongoDB documents to blog objects using the blog schema
+- Rich text formatting
+- Image upload with drag-and-drop
+- Real-time HTML conversion
+- Content change callbacks
+
+## Blog Display
+
+### Homepage Recent Posts
+
+- Fetches 3 most recent published blogs
+- Server-side: `BlogModels.find({ isDraft: false }).sort({ publishedAt: -1 }).limit(3)`
+
+### Blog List Page (`/blogs`)
+
+- Server-side pagination
+- Displays: cover image, title, excerpt, date, tags
+- Responsive grid layout
+
+### Individual Blog Page (`/blogs/[slug]`)
+
+- Server-side fetch by slug
+- View counter with unique tracking (see `view-counter-implementation.md`)
+- Reading time calculation
+- Related posts section
+- Social sharing buttons
+
+## Admin Features
+
+### Blog Editor (`/admin/blogs/new`)
+
+- Create new blog or edit existing (via `?id=blogId`)
+- BlockNote rich text editor
+- Cover image upload
+- Tag management
+- Draft/publish toggle
+- Auto-save support (not implemented yet)
+
+### Form Submission
+
+1. Collect form data (title, author, excerpt, etc.)
+2. Append editor state: `contentRTE`, `content`, `contentImages`
+3. POST to `/api/blog` as FormData
+4. Server generates slug, uploads cover image, saves to MongoDB
+
+## SEO Features
+
+- URL-friendly slugs
+- Meta tags generated from excerpt
+- Open Graph tags for social sharing
+- Reading time calculation
+- View counter for engagement metrics
+
+---
+
+**Dependencies**: BlockNote, MongoDB/Mongoose, MinIO, github-slugger
+**Last Updated**: 2025-01-15

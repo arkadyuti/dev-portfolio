@@ -1,23 +1,35 @@
-# Projects Implementation Documentation
+# Projects System
 
-This document outlines the implementation of the Projects feature in the portfolio application.
+## Overview
 
-## Table of Contents
+Project portfolio system with MongoDB storage, MinIO image storage, and tag-based categorization. Supports featured projects, draft mode, and project status tracking.
 
-1. [Data Model](#data-model)
-2. [API Endpoints](#api-endpoints)
-3. [Frontend Components](#frontend-components)
-4. [Admin Interface](#admin-interface)
+## Architecture
+
+### Data Flow
+
+1. Admin creates/edits project via form (`/admin/projects/new`)
+2. Cover image uploaded to MinIO
+3. Project saved to MongoDB with metadata
+4. Public page fetches published projects (`/projects`)
+
+### Key Files
+
+- `models/project.ts` - MongoDB schema with Mongoose, Zod validation
+- `app/api/projects/route.ts` - List all projects (GET)
+- `app/api/project/route.ts` - Create/update project (POST)
+- `app/api/project/[id]/route.ts` - Get by ID (GET), delete (DELETE)
+- `app/projects/page.tsx` - Public projects list
+- `app/admin/projects/page.tsx` - Admin management interface
+- `app/admin/projects/new/page.tsx` - Create/edit form
 
 ## Data Model
-
-The project data is stored in MongoDB using the following schema (defined in `models/project.ts`):
 
 ```typescript
 interface IProject {
   id: string
   title: string
-  slug: string
+  slug: string // Auto-generated from title
   description: string
   coverImage: string
   coverImageKey?: string
@@ -30,174 +42,110 @@ interface IProject {
 }
 ```
 
-Key fields:
+### Key Fields
 
-- `id`: Unique identifier for the project
-- `slug`: URL-friendly version of the title (auto-generated if not provided)
-- `coverImage`: URL to the project's main image
-- `coverImageKey`: Reference to the image in the storage system
-- `tags`: Array of tags associated with the project
-- `status`: Current status of the project ("completed", "in-progress", or "planned")
-- `isDraft`: Boolean indicating if the project is a draft or published
+- **slug**: URL-friendly, auto-generated from title if not provided
+- **status**: Development status (separate from publish status)
+- **isDraft**: Controls public visibility
+- **featured**: Priority sorting (featured projects shown first)
 
 ## API Endpoints
 
 ### GET /api/projects
 
-Retrieves a list of all projects.
+List all projects
 
-**Query Parameters:**
-
-- `fetchAll`: When set to "true", includes draft projects (admin only)
-
-**Response:**
-
-```json
-{
-  "success": true,
-  "data": [Project]
-}
-```
+- Query: `fetchAll=true` (includes drafts, admin only)
+- Sorting: Featured first, then by creation date
+- Response: `{ success: true, data: Project[] }`
 
 ### POST /api/project
 
-Creates a new project or updates an existing one.
+Create/update project (FormData)
 
-**Query Parameters:**
+- Query: `projectId` (for updates)
+- Fields: `title`, `description`, `tags`, `coverImage` (file), `githubUrl`, `liveUrl`, `status`, `featured`, `isDraft`
+- Auto-generates slug from title
 
-- `projectId`: (Optional) ID of the project to update
+### GET /api/project/[id]
 
-**Request Body:**
-FormData containing project fields including:
+Get single project by ID
 
-- `title`: Project title
-- `description`: Project description
-- `tags`: JSON string of tag objects with id and name
-- `coverImage`: Image file for the project (if updating, only required for a new image)
-- `githubUrl`: (Optional) Link to GitHub repository
-- `liveUrl`: (Optional) Link to live demo
-- `status`: Project status
-- `featured`: Boolean flag for featured projects
-- `isDraft`: Boolean flag for draft status
+- Response: `{ success: true, data: Project }`
 
-**Response:**
+### DELETE /api/project/[id]
 
-```json
-{
-  "success": true,
-  "data": Project
-}
-```
+Delete project by ID
 
-### GET /api/project/[slug]
-
-Retrieves a specific project by its slug.
-
-**Path Parameters:**
-
-- `slug`: The slug of the project to retrieve
-
-**Response:**
-
-```json
-{
-  "success": true,
-  "data": Project
-}
-```
-
-### DELETE /api/project/[slug]
-
-Deletes a specific project by its slug.
-
-**Path Parameters:**
-
-- `slug`: The slug of the project to delete
-
-**Response:**
-
-```json
-{
-  "success": true
-}
-```
-
-## Frontend Components
-
-### Projects Page (`app/projects/page.tsx`)
-
-Displays a list of published projects from the database.
-
-Features:
-
-- Server-side data fetching from MongoDB
-- Responsive grid layout for project cards
-- Displays project information including:
-  - Cover image
-  - Title
-  - Description
-  - Tags
-  - Links to GitHub and live demo when available
-
-## Admin Interface
-
-### Projects List Page (`app/admin/projects/page.tsx`)
-
-Admin interface for managing projects.
-
-Features:
-
-- Client-side data fetching with React hooks
-- Search functionality
-- Sorting by featured status and publishing status
-- Table view with actions for editing and deleting projects
-
-### Project Form (`app/admin/projects/new/page.tsx` and `app/admin/projects/edit/[slug]/page.tsx`)
-
-Form for creating and editing projects.
-
-Features:
-
-- Form validation with Zod schema
-- Image upload functionality
-- Tag selection with ability to create new tags
-- Status selection (completed, in-progress, planned)
-- Draft mode
-- Slug auto-generation from title
-
-Form fields:
-
-- Title
-- Slug (with auto-generation option)
-- Description
-- Cover image upload
-- Tags selection
-- GitHub URL
-- Live demo URL
-- Project status
-- Featured flag
+- Cleans up cover image from MinIO
+- Response: `{ success: true }`
 
 ## Image Handling
 
-Projects support image uploads:
+### Storage Strategy
 
-1. When a user uploads an image, it is temporarily stored
-2. Upon successful project creation/update, the image is moved to permanent storage
-3. The previous image (if any) is deleted to conserve storage space
+- **MinIO S3-compatible storage** for cover images
+- Upload flow: Temp location → save project → move to final location
+- Old image cleanup on update/delete
+
+### Upload Flow
+
+1. Upload cover image to temp location
+2. Save project to MongoDB
+3. Move image from temp to `project-images/` directory
+4. Delete old image if updating
 
 ## Tags System
 
-The projects system leverages the same tag system used by the blog:
+- Shared tags between blogs and projects
+- Selectable from existing tags
+- New tags can be created on-the-fly
+- Consistent categorization across content types
 
-1. Tags can be selected from existing tags
-2. New tags can be created on-the-fly
-3. Tags are shared between blogs and projects for consistent categorization
+## Status System
 
-## Status and Draft System
+### Development Status
 
-Projects can have both a development status and a publishing status:
+- **completed**: Project is finished
+- **in-progress**: Currently being developed
+- **planned**: Future project
 
-- Development status (completed, in-progress, planned) describes the actual state of the project
-- Publishing status (draft or published) controls visibility on the public site
+### Publishing Status
 
-Only published projects appear on the public-facing projects page.
+- **isDraft = false**: Visible on public site
+- **isDraft = true**: Hidden from public, visible in admin
+
+Only published (non-draft) projects appear on `/projects` page.
+
+## Admin Interface
+
+### Projects List (`/admin/projects/page.tsx`)
+
+- Client-side data fetching with React Query
+- Search functionality
+- Sorting by featured/draft status
+- Table view with edit/delete actions
+
+### Project Form (`/admin/projects/new`)
+
+- Create new or edit existing (via `?projectId=...`)
+- Form validation with Zod
+- Cover image upload
+- Tag selection/creation
+- Status dropdown
+- Draft/featured toggles
+- Auto-slug generation
+
+## Public Display
+
+### Projects Page (`/projects`)
+
+- Server-side fetching (published only)
+- Responsive grid layout
+- Shows: cover image, title, description, tags, links
+- Featured projects sorted first
+
+---
+
+**Dependencies**: MongoDB/Mongoose, MinIO, Zod
+**Last Updated**: 2025-01-15

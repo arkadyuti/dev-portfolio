@@ -1,10 +1,9 @@
 'use client'
-import React, { useState, useEffect, Suspense } from 'react'
+import React, { useState, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import * as z from 'zod'
-import { useAuth } from '@/contexts/AuthContext'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import {
@@ -17,7 +16,6 @@ import {
 } from '@/components/ui/form'
 import { Eye, EyeOff, Lock, User } from 'lucide-react'
 import { toast } from '@/components/ui/sonner'
-import { logger } from '@/lib/logger'
 
 const formSchema = z.object({
   email: z.string().email('Please enter a valid email'),
@@ -26,14 +24,12 @@ const formSchema = z.object({
 
 type FormValues = z.infer<typeof formSchema>
 
-// Create a separate component that uses useSearchParams
 function SignInContent() {
   const [showPassword, setShowPassword] = useState(false)
-  const { login, isAuthenticated, isLoading } = useAuth()
+  const [isLoading, setIsLoading] = useState(false)
   const router = useRouter()
   const searchParams = useSearchParams()
 
-  // Get the return URL from search params (if any)
   const returnUrl = searchParams.get('returnUrl') || '/admin/blogs'
 
   const form = useForm<FormValues>({
@@ -44,29 +40,43 @@ function SignInContent() {
     },
   })
 
-  // Handle redirection if already authenticated
-  useEffect(() => {
-    if (isAuthenticated && !isLoading) {
-      router.push(returnUrl)
-    }
-  }, [isAuthenticated, isLoading, router, returnUrl])
-
   const onSubmit = async (values: FormValues) => {
-    try {
-      const success = await login(values.email, values.password)
+    setIsLoading(true)
 
-      if (!success) {
-        toast.error('Invalid email or password')
+    try {
+      // Call new auth API
+      const response = await fetch('/api/auth/signin', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          email: values.email,
+          password: values.password,
+        }),
+      })
+
+      const data = await response.json()
+
+      if (!response.ok || !data.success) {
+        // Authentication failed
+        const errorMessage = data.error?.message || 'Invalid email or password'
+        toast.error(errorMessage)
         form.setError('email', { message: ' ' })
         form.setError('password', { message: 'Invalid credentials' })
       } else {
+        // Authentication successful
         toast.success('Successfully logged in')
-        // In Next.js, we handle redirects after successful login here
-        router.push(returnUrl)
+        // Small delay to show toast, then hard redirect
+        setTimeout(() => {
+          window.location.href = returnUrl
+        }, 500)
       }
     } catch (error) {
-      logger.error('Login error', error)
+      console.error('Login error:', error)
       toast.error('An error occurred during login')
+    } finally {
+      setIsLoading(false)
     }
   }
 
@@ -78,15 +88,17 @@ function SignInContent() {
           <p className="mt-2 text-sm text-muted-foreground">
             Sign in to access the admin dashboard
           </p>
-          <div className="mt-4 rounded-md bg-muted p-3 text-xs text-muted-foreground">
-            <p>Demo credentials:</p>
-            <p>Email: admin@example.com</p>
-            <p>Password: password</p>
-          </div>
         </div>
 
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+          <form
+            onSubmit={(e) => {
+              e.preventDefault()
+              form.handleSubmit(onSubmit)(e)
+            }}
+            className="space-y-6"
+            method="post"
+          >
             <FormField
               control={form.control}
               name="email"
@@ -96,7 +108,7 @@ function SignInContent() {
                   <div className="relative">
                     <User className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                     <FormControl>
-                      <Input placeholder="admin@example.com" className="pl-10" {...field} />
+                      <Input placeholder="Enter your email" className="pl-10" {...field} />
                     </FormControl>
                   </div>
                   <FormMessage />

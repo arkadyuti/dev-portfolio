@@ -4,12 +4,20 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { toast } from '@/components/ui/sonner'
 import Link from '@/components/ui/Link'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { logger } from '@/lib/logger'
 import { profile } from '@/data/profile-data'
 
+interface BuildInfo {
+  version: string
+  buildNumber: number
+  buildTime: string
+  buildTimestamp: number
+}
+
 export function Footer() {
   const [isLoading, setIsLoading] = useState(false)
+  const [buildInfo, setBuildInfo] = useState<BuildInfo | null>(null)
 
   const socialLinks = [
     { name: 'Github', href: profile.socialLinks.github, icon: Github },
@@ -17,6 +25,24 @@ export function Footer() {
     { name: 'Twitter', href: profile.socialLinks.twitter, icon: Twitter },
     { name: 'Email', href: profile.socialLinks.email, icon: Mail },
   ]
+
+  useEffect(() => {
+    // Fetch build info
+    fetch('/build-info.json')
+      .then((res) => res.json())
+      .then((data) => setBuildInfo(data))
+      .catch((err) => {
+        logger.error('Failed to fetch build info', err)
+        // Fallback to package.json version
+        const now = new Date()
+        setBuildInfo({
+          version: '1.0.1',
+          buildNumber: Math.floor(now.getTime() / 1000),
+          buildTime: now.toISOString(),
+          buildTimestamp: now.getTime(),
+        })
+      })
+  }, [])
 
   const handleNewsletterSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -111,9 +137,14 @@ export function Footer() {
         </div>
 
         <div className="mt-12 flex flex-col items-center justify-between border-t pt-8 md:flex-row">
-          <p className="text-sm text-muted-foreground">
-            © {new Date().getFullYear()} DevPortfolio. All rights reserved.
-          </p>
+          <div className="flex flex-col items-center gap-1 md:items-start">
+            <p className="text-sm text-muted-foreground">Built with passion for open source</p>
+            {buildInfo && (
+              <p className="text-xs text-muted-foreground/70">
+                v{buildInfo.version} • Build #{buildInfo.buildNumber}
+              </p>
+            )}
+          </div>
 
           <div className="mt-4 flex items-center gap-4 md:mt-0">
             {socialLinks.map((link) => (

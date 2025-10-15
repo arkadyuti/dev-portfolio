@@ -11,21 +11,6 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '18'
-
-      - name: Cache Yarn dependencies
-        uses: actions/cache@v4
-        with:
-          path: |
-            .yarn/cache
-            .yarn/install-state.gz
-          key: ${{ runner.os }}-yarn-${{ hashFiles('yarn.lock') }}
-          restore-keys: |
-            ${{ runner.os }}-yarn-
-
       - name: Create .env file
         run: |
           echo "Creating .env file with secrets..."
@@ -35,6 +20,10 @@ jobs:
           echo "MINIO_PORT=${{ secrets.MINIO_PORT }}" >> .env
           echo "MINIO_SECRET=${{ secrets.MINIO_SECRET }}" >> .env
           echo "MONGODB_URI=${{ secrets.MONGODB_URI }}" >> .env
+          echo "JWT_ACCESS_SECRET=${{ secrets.JWT_ACCESS_SECRET }}" >> .env
+          echo "JWT_REFRESH_SECRET=${{ secrets.JWT_REFRESH_SECRET }}" >> .env
+          echo "REDIS_HOST=${{ secrets.REDIS_HOST }}" >> .env
+          echo "REDIS_PORT=${{ secrets.REDIS_PORT }}" >> .env
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
@@ -76,6 +65,7 @@ jobs:
           echo "Transferring Docker image to server..."
           scp -o StrictHostKeyChecking=no portfolio-image.tar.gz ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}:/root/services/portfolio-image.tar.gz
           scp -o StrictHostKeyChecking=no docker-compose.yml ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}:/root/services/portfolio/docker-compose.yml
+          scp -o StrictHostKeyChecking=no .env ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}:/root/services/portfolio/.env
 
       - name: Deploy to production
         run: |

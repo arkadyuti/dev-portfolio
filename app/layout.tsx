@@ -6,7 +6,7 @@ import { Header } from '@/components/header'
 import { Footer } from '@/components/footer'
 
 import './global.css'
-import { AuthProvider } from '@/contexts/AuthContext'
+import { Providers } from './providers'
 import { TooltipProvider } from '@/components/ui/tooltip'
 import { Toaster } from '@/components/ui/toaster'
 import { Toaster as Sonner } from '@/components/ui/sonner'
@@ -127,7 +127,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         />
       </head>
       <body>
-        <AuthProvider>
+        <Providers>
           <ThemeProvider>
             <TooltipProvider>
               <Toaster />
@@ -139,7 +139,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
               </div>
             </TooltipProvider>
           </ThemeProvider>
-        </AuthProvider>
+        </Providers>
       </body>
     </html>
   )

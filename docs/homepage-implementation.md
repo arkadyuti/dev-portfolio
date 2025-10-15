@@ -1,126 +1,102 @@
-# Homepage Implementation Documentation
-
-This document outlines the implementation of the Homepage in the portfolio application, particularly focusing on the dynamic content sections.
-
-## Table of Contents
-
-1. [Overview](#overview)
-2. [Featured Projects Section](#featured-projects-section)
-3. [Recent Blog Posts Section](#recent-blog-posts-section)
-4. [Server-Side Data Fetching](#server-side-data-fetching)
+# Homepage
 
 ## Overview
 
-The homepage (`app/page.tsx`) serves as the main entry point for the portfolio website. It includes several sections:
+Server-rendered homepage with dynamic content sections: hero, tech stack, featured projects, recent blog posts, and contact CTA. Uses Next.js Server Components for optimal performance and SEO.
 
-1. Hero section with personal introduction
-2. Tech stack showcase
-3. Featured projects from the database
-4. Recent blog posts from the database
-5. Contact CTA section
+## Architecture
 
-The page is built as a Next.js Server Component, enabling server-side data fetching for optimal performance and SEO.
+### Data Flow
 
-## Featured Projects Section
+1. Page loads → Server fetches featured projects + recent blogs from MongoDB
+2. HTML rendered server-side with data
+3. Client receives fully populated page
+4. No client-side loading states needed
 
-The homepage displays featured projects fetched directly from the MongoDB database:
+### Key Files
 
-```typescript
-// Server-side data fetching
-async function getFeaturedProjects() {
-  try {
-    await connectToDatabase()
-    const projects = await ProjectModels.find({ featured: true, isDraft: false })
-      .sort({ createdAt: -1 })
-      .limit(4)
-      .lean()
+- `app/page.tsx` - Homepage Server Component
+- Uses `ProjectModels` and `BlogModels` for data fetching
+- `data/profile-data.ts` - Profile and skills data
 
-    return transformToProjects(projects)
-  } catch (error) {
-    logger.error('Error fetching featured projects:', error)
-    return []
-  }
-}
-```
+## Sections
 
-Implementation details:
+### 1. Hero Section
 
-- Uses server-side data fetching with MongoDB
-- Filters for projects marked as featured (`featured: true`)
-- Excludes draft projects (`isDraft: false`)
-- Sorts by creation date (newest first)
-- Limits to 4 projects maximum
-- Transforms MongoDB documents to project objects using the project schema
+- Profile name, title, bio
+- Profile image with gradient background
+- CTA buttons to projects and about pages
+- Structured data (Person + Website schemas)
 
-Each project card displays:
+### 2. Tech Stack
 
-- Project cover image
-- Title
-- Description
-- Top 3 tags (with a +X indicator if more exist)
-- Links to live demo and source code (if available)
+- Top 15 skills from profile data (3 per category)
+- Responsive grid layout
+- Link to full skills list on about page
 
-## Recent Blog Posts Section
+### 3. Featured Projects
 
-The homepage displays the 3 most recent blog posts from the database:
+Server-fetched from MongoDB:
 
 ```typescript
-// Server-side data fetching for recent blog posts
-async function getRecentBlogPosts() {
-  try {
-    await connectToDatabase()
-    const blogs = await BlogModels.find({ isDraft: false })
-      .sort({ publishedAt: -1 })
-      .limit(3)
-      .lean()
-
-    return transformToBlogs(blogs)
-  } catch (error) {
-    logger.error('Error fetching recent blog posts:', error)
-    return []
-  }
-}
+ProjectModels.find({ featured: true, isDraft: false }).sort({ createdAt: -1 }).limit(4)
 ```
 
-Implementation details:
-
-- Uses server-side data fetching with MongoDB
-- Filters out draft posts (`isDraft: false`)
-- Sorts by publication date (newest first)
-- Limits to 3 posts
-- Transforms MongoDB documents to blog objects using the blog schema
-
-Each blog card displays:
+Each card displays:
 
 - Cover image
-- Publication date
-- Title
-- Excerpt (limited to 2 lines)
-- Up to 2 tags
+- Title, description
+- Top 3 tags (+X indicator if more)
+- Live demo + source code links
 
-## Server-Side Data Fetching
+### 4. Recent Blog Posts
 
-The homepage implements server-side data fetching using Next.js Server Components:
+Server-fetched from MongoDB:
 
 ```typescript
-// Explicitly mark page as server component
+BlogModels.find({ isDraft: false }).sort({ publishedAt: -1 }).limit(3)
+```
+
+Each card displays:
+
+- Cover image
+- Publication date + view count
+- Title, excerpt (2 lines max)
+- Up to 2 tags
+
+### 5. Contact CTA
+
+- Call-to-action section
+- Email link to profile contact
+
+## Server-Side Rendering
+
+```typescript
 export const dynamic = 'force-dynamic'
 
 export default async function Home() {
   const featuredProjects = await getFeaturedProjects()
   const recentPosts = await getRecentBlogPosts()
-
-  // Render the page with the fetched data
-  return (
-    // ... JSX with featuredProjects and recentPosts
-  )
+  // Render with data
 }
 ```
 
-Benefits of this approach:
+### Benefits
 
-1. **Performance**: Data is fetched on the server before sending HTML to the client
-2. **SEO**: Search engines receive fully rendered content
-3. **Reduced Client-Side JavaScript**: No need for client-side data fetching
-4. **Improved Initial Page Load**: Content is available immediately without loading states
-5. **Error Handling**: Server-side errors are gracefully handled before reaching the client
+- **SEO**: Fully rendered content for search engines
+- **Performance**: No client-side fetch delays
+- **UX**: Instant content display
+- **Error handling**: Server-side graceful fallbacks
+
+## SEO Features
+
+- Dynamic metadata with profile info
+- Person structured data (JSON-LD)
+- Website structured data (JSON-LD)
+- Priority image loading for hero
+- Lazy loading for project/blog images
+
+---
+
+**Dependencies**: Next.js Server Components, MongoDB/Mongoose
+**Last Updated**: 2025-01-15

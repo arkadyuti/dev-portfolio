@@ -1,31 +1,13 @@
 # Deployment Guide
 
-This document provides comprehensive instructions for deploying the portfolio application.
-
-## Table of Contents
-
-1. [Prerequisites](#prerequisites)
-2. [Environment Configuration](#environment-configuration)
-3. [Docker Deployment](#docker-deployment)
-4. [Production Build](#production-build)
-5. [Performance Optimization](#performance-optimization)
-6. [Monitoring and Maintenance](#monitoring-and-maintenance)
-
 ## Prerequisites
 
-Before deployment, ensure you have:
-
 - Node.js 18+ or Docker
-- MongoDB instance (local or cloud)
-- MinIO instance for file storage
-- Domain name (for production)
-- SSL certificate (recommended)
+- MongoDB instance (local/cloud)
+- MinIO instance for image storage
+- Domain name + SSL certificate (production)
 
-## Environment Configuration
-
-### Required Environment Variables
-
-Create a `.env.local` file with the following variables:
+## Environment Variables
 
 ```bash
 # Database
@@ -34,172 +16,182 @@ MONGODB_URI=mongodb://localhost:27017/portfolio
 # MinIO Storage
 MINIO_ENDPOINT=your-minio-endpoint
 MINIO_PORT=9000
-MINIO_ACCESS_KEY=your-access-key
-MINIO_SECRET_KEY=your-secret-key
-MINIO_BUCKET=your-bucket-name
+MINIO_KEY=your-access-key
+MINIO_SECRET=your-secret-key
+MINIO_IMAGE_BUCKET=your-bucket-name
 
-# Site Configuration
+# NextAuth
 NEXTAUTH_URL=https://yourdomain.com
-NEXTAUTH_SECRET=your-nextauth-secret-key
+NEXTAUTH_SECRET=<generate-with-openssl-rand-base64-32>
+
+# Admin Credentials
+ADMIN_EMAIL=admin@example.com
+ADMIN_PASSWORD_HASH=<generate-with-node-scripts/generate-password-hash.js>
+ADMIN_NAME=Admin User
 ```
 
-### Site Metadata Configuration
+**Important**: Generate `NEXTAUTH_SECRET` with `openssl rand -base64 32`
 
-Update `data/siteMetadata.js` with your information:
+## Site Configuration
+
+Update `data/siteMetadata.js`:
 
 ```javascript
-const siteMetadata = {
+{
   title: 'Your Name | Your Title',
-  author: 'Your Name',
-  description: 'Your professional description',
   siteUrl: 'https://yourdomain.com',
-  email: 'your-email@domain.com',
-  github: 'https://github.com/yourusername',
-  linkedin: 'https://linkedin.com/in/yourprofile',
-  // ... other social links
+  email: 'your@email.com',
+  github: 'https://github.com/username',
+  // ... other social links, analytics IDs
 }
 ```
 
 ## Docker Deployment
 
-### Using Docker Compose
-
-The application includes Docker configuration for easy deployment:
+### Docker Compose (Recommended)
 
 ```bash
-# Start the application with Docker Compose
-docker-compose up -d
-
-# View logs
-docker-compose logs -f
-
-# Stop the application
-docker-compose down
+docker-compose up -d        # Start
+docker-compose logs -f      # View logs
+docker-compose down         # Stop
 ```
 
-### Custom Docker Build
+### Manual Docker
 
 ```bash
-# Build the Docker image
 docker build -t portfolio-app .
-
-# Run the container
-docker run -d \
-  --name portfolio \
-  -p 3000:3000 \
-  --env-file .env.local \
-  portfolio-app
+docker run -d -p 3000:3000 --env-file .env.local portfolio-app
 ```
 
-## Production Build
+## Manual Deployment
 
-### Manual Deployment
+```bash
+yarn install                # Install dependencies
+yarn build                  # Build production bundle
+yarn serve                  # Start production server
+```
 
-1. **Install dependencies:**
-   ```bash
-   yarn install
-   ```
+**Build notes**:
 
-2. **Build the application:**
-   ```bash
-   yarn build
-   ```
+- TypeScript errors ignored in build (`ignoreBuildErrors: true`)
+- Port: 5005 (dev), 3000 (production)
+- Post-build script: `scripts/postbuild.mjs`
 
-3. **Start the production server:**
-   ```bash
-   yarn serve
-   ```
+## Docker Configuration
 
-### Build Configuration
+### Dockerfile Architecture
 
-The build process includes:
+- **Multi-stage build**: deps → builder → runner
+- **Base**: Node 18 Alpine
+- **Output**: Standalone Next.js (minimal size)
+- **User**: Non-root `nextjs` user (uid 1001)
+- **Port**: 3000
 
-- TypeScript compilation with strict checks disabled for faster builds
-- Next.js optimizations and bundling
-- Post-build asset optimization via `scripts/postbuild.mjs`
+### docker-compose.yml
 
-## Performance Optimization
+- Sets environment vars (NODE_ENV, PORT, HOSTNAME, LOG_LEVEL)
+- Maps port 3000:3000
+- Restart policy: unless-stopped
+- Health check: `/api/ping` endpoint (30s interval)
+
+**Note**: `.env` file must be provided separately (not mounted in docker-compose.yml)
+
+## Security
+
+- CSP headers configured in `next.config.js`
+- CSRF protection via NextAuth
+- Password hashing with bcrypt (10 rounds)
+- httpOnly cookies for sessions
+- Non-root Docker user
+- **Session invalidation** on credential change (see `nextauth-integration.md`)
+
+### Production Checklist
+
+- [ ] Generate unique `NEXTAUTH_SECRET`
+- [ ] Set strong admin password and hash
+- [ ] Update `NEXTAUTH_URL` to production domain
+- [ ] Configure SSL/HTTPS
+- [ ] Set up MongoDB backups
+- [ ] Configure MinIO backup/replication
+- [ ] Review CSP headers
+- [ ] Enable error tracking (Sentry, etc.)
+- [ ] Set up monitoring (analytics, uptime)
+
+## Performance
 
 ### Image Optimization
 
-- Configure remote patterns in `next.config.js` for your image domains
-- Use Next.js Image component for automatic optimization
-- Consider using a CDN for static assets
+- Next.js Image component with remote patterns
+- Configure allowed domains in `next.config.js`
+- Consider CDN for static assets
 
 ### Bundle Analysis
 
-Analyze your bundle size:
-
 ```bash
-yarn analyze
+yarn analyze  # Generates visual bundle report
 ```
 
-This generates a visual report of your bundle composition.
+### Caching
 
-### Caching Strategy
+- Static assets cached by Next.js automatically
+- API responses: Use appropriate cache headers
+- Consider Redis for session storage (optional)
 
-- Static assets are automatically cached by Next.js
-- API responses can be cached using appropriate headers
-- Consider implementing Redis for session storage in production
+## Monitoring
 
-## Monitoring and Maintenance
+### Analytics
 
-### Analytics Setup
+Add to `data/siteMetadata.js`:
 
-1. Add your Google Analytics ID to `data/siteMetadata.js`:
-   ```javascript
-   analytics: {
-     googleAnalyticsId: 'G-XXXXXXXXXX',
-   }
-   ```
+```javascript
+analytics: {
+  googleAnalyticsId: 'G-XXXXXXXXXX',
+}
+```
 
-### Backup Strategy
+### Backups
 
-1. **Database Backups:**
-   - Set up automated MongoDB backups
-   - Test restore procedures regularly
+- **MongoDB**: Automated backups + test restores
+- **MinIO**: Backup policies + cross-region replication
 
-2. **Image Storage Backups:**
-   - Configure MinIO backup policies
-   - Consider cross-region replication
+### Health Checks
 
-### Security Considerations
-
-- Keep dependencies updated: `yarn upgrade`
-- Monitor security vulnerabilities: `yarn audit`
-- Review and update CSP headers in `next.config.js`
-- Implement rate limiting for API endpoints
-- Use HTTPS in production
-- Regularly rotate secret keys
-
-### Performance Monitoring
-
+- Docker healthcheck configured
 - Monitor Core Web Vitals
-- Set up error tracking (e.g., Sentry)
-- Monitor server response times
-- Track database performance
+- Track database/API performance
+- Set up error tracking
 
 ## Troubleshooting
 
-### Common Issues
+### Build failures
 
-1. **Build Failures:**
-   - Check TypeScript errors: `yarn build` without NEXT_DISABLE_TYPE_CHECKS
-   - Verify all dependencies are installed
-   - Clear `.next` directory and rebuild
+- Clear `.next` and rebuild
+- Check dependencies: `yarn install`
+- Run `yarn typecheck` for TS errors
 
-2. **Database Connection Issues:**
-   - Verify MongoDB URI and credentials
-   - Check network connectivity
-   - Ensure database is running
+### Database connection
 
-3. **Image Upload Issues:**
-   - Verify MinIO configuration and credentials
-   - Check bucket permissions
-   - Ensure proper network access to MinIO
+- Verify `MONGODB_URI` format
+- Check network connectivity
+- Ensure MongoDB is running
 
-### Logs and Debugging
+### Image uploads
 
-- Application logs are available via `docker-compose logs`
-- Enable debug mode by setting `NODE_ENV=development`
-- Check browser console for client-side errors
+- Verify MinIO credentials
+- Check bucket permissions/policies
+- Test MinIO network access
+
+### Auth issues
+
+- Escape `$` in password hash: `\$2b\$10\$...`
+- Restart server after `.env` changes
+- Check middleware errors in console
+
+### Logs
+
+- Docker: `docker-compose logs -f`
+- Enable debug: `NODE_ENV=development`
+
+---
+
+**Last Updated**: 2025-01-15

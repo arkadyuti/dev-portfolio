@@ -28,6 +28,9 @@ public/sitemap.xml
 # search
 /public/search.json
 
+# build info
+/public/build-info.json
+
 # misc
 .DS_Store
 .idea
