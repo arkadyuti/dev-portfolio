@@ -33,7 +33,40 @@ export interface RateLimitResult {
 }
 
 /**
- * Check and increment rate limit
+ * Lua script for atomic rate limiting
+ * Returns: [allowed (0/1), remaining, ttl]
+ */
+const RATE_LIMIT_SCRIPT = `
+  local key = KEYS[1]
+  local max_attempts = tonumber(ARGV[1])
+  local window_seconds = tonumber(ARGV[2])
+
+  local current = redis.call('GET', key)
+  local count = 0
+
+  if current then
+    count = tonumber(current)
+  end
+
+  if count >= max_attempts then
+    local ttl = redis.call('TTL', key)
+    return {0, 0, ttl}
+  end
+
+  local new_count = redis.call('INCR', key)
+
+  if new_count == 1 then
+    redis.call('EXPIRE', key, window_seconds)
+  end
+
+  local ttl = redis.call('TTL', key)
+  local remaining = max_attempts - new_count
+
+  return {1, remaining, ttl}
+`
+
+/**
+ * Check and increment rate limit (atomic operation)
  */
 export async function checkRateLimit(
   identifier: string,
@@ -53,15 +86,19 @@ export async function checkRateLimit(
       })
     }
 
-    // Get current count
-    const current = await redis.get(key)
-    const count = current ? parseInt(current) : 0
+    // Execute Lua script atomically
+    const result = (await redis.eval(
+      RATE_LIMIT_SCRIPT,
+      1,
+      key,
+      config.maxAttempts.toString(),
+      config.windowSeconds.toString()
+    )) as [number, number, number]
 
-    // Check if limit exceeded
-    if (count >= config.maxAttempts) {
-      const ttl = await redis.ttl(key)
-      const resetAt = new Date(Date.now() + ttl * 1000)
+    const [allowed, remaining, ttl] = result
+    const resetAt = new Date(Date.now() + ttl * 1000)
 
+    if (allowed === 0) {
       return {
         allowed: false,
         remaining: 0,
@@ -70,21 +107,9 @@ export async function checkRateLimit(
       }
     }
 
-    // Increment counter
-    const newCount = await redis.incr(key)
-
-    // Set expiry if this is the first attempt
-    if (newCount === 1) {
-      await redis.expire(key, config.windowSeconds)
-    }
-
-    // Get TTL for reset time
-    const ttl = await redis.ttl(key)
-    const resetAt = new Date(Date.now() + ttl * 1000)
-
     return {
       allowed: true,
-      remaining: config.maxAttempts - newCount,
+      remaining,
       resetAt,
     }
   } catch (error) {

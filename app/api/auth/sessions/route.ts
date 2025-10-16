@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { verifyAccessToken } from '@/lib/auth/jwt-edge'
 import { getUserSessions, deleteSession, deleteAllUserSessions } from '@/lib/auth/session'
+import { constantTimeCompare } from '@/lib/auth/crypto-utils'
 
 /**
  * GET /api/auth/sessions
@@ -50,7 +51,7 @@ export async function GET(request: NextRequest) {
       ipAddress: session.ipAddress,
       createdAt: new Date(session.createdAt).toISOString(),
       expiresAt: new Date(session.expiresAt).toISOString(),
-      isCurrent: session.sessionId === payload.sessionId,
+      isCurrent: constantTimeCompare(session.sessionId, payload.sessionId), // Constant-time comparison
     }))
 
     return NextResponse.json(

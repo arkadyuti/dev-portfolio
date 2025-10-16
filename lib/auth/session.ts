@@ -1,5 +1,5 @@
 import { nanoid } from 'nanoid'
-import getRedisClient from '@/lib/redis'
+import { getConnectedRedisClient } from '@/lib/redis'
 import type { UserRole } from '@/models/user'
 
 /**
@@ -31,7 +31,7 @@ export async function createSession(data: {
   userAgent: string
   ipAddress: string
 }): Promise<SessionData> {
-  const redis = getRedisClient()
+  const redis = await getConnectedRedisClient()
   const sessionId = nanoid(32)
   const now = Date.now()
 
@@ -46,11 +46,22 @@ export async function createSession(data: {
     expiresAt: now + SESSION_EXPIRY_SECONDS * 1000,
   }
 
-  // Store session in Redis with automatic expiry
-  const key = `session:${sessionId}`
-  await redis.setex(key, SESSION_EXPIRY_SECONDS, JSON.stringify(sessionData))
+  const sessionKey = `session:${sessionId}`
+  const userSessionsKey = `user:${data.userId}:sessions`
 
-  return sessionData
+  try {
+    // Use pipeline for atomic operations
+    const pipeline = redis.pipeline()
+    pipeline.setex(sessionKey, SESSION_EXPIRY_SECONDS, JSON.stringify(sessionData))
+    pipeline.sadd(userSessionsKey, sessionId)
+    pipeline.expire(userSessionsKey, SESSION_EXPIRY_SECONDS + 86400) // Keep set 1 day longer than sessions
+    await pipeline.exec()
+
+    return sessionData
+  } catch (error) {
+    console.error('[CRITICAL] Redis session creation failed:', error)
+    throw new Error('Session storage unavailable - authentication disabled')
+  }
 }
 
 /**
@@ -58,7 +69,7 @@ export async function createSession(data: {
  */
 export async function getSession(sessionId: string): Promise<SessionData | null> {
   try {
-    const redis = getRedisClient()
+    const redis = await getConnectedRedisClient()
     const key = `session:${sessionId}`
 
     const data = await redis.get(key)
@@ -83,38 +94,72 @@ export async function getSession(sessionId: string): Promise<SessionData | null>
  * Delete a session from Redis
  */
 export async function deleteSession(sessionId: string): Promise<void> {
-  const redis = getRedisClient()
-  const key = `session:${sessionId}`
-  await redis.del(key)
+  const redis = await getConnectedRedisClient()
+  const sessionKey = `session:${sessionId}`
+
+  try {
+    // Get userId before deleting to clean up the set
+    const sessionData = await redis.get(sessionKey)
+
+    if (sessionData) {
+      try {
+        const parsed: SessionData = JSON.parse(sessionData)
+        const userSessionsKey = `user:${parsed.userId}:sessions`
+
+        const pipeline = redis.pipeline()
+        pipeline.del(sessionKey)
+        pipeline.srem(userSessionsKey, sessionId)
+        await pipeline.exec()
+      } catch (error) {
+        // If parsing fails, just delete the session key
+        await redis.del(sessionKey)
+      }
+    } else {
+      await redis.del(sessionKey)
+    }
+  } catch (error) {
+    console.error('[ERROR] Redis session deletion failed:', error)
+    // Non-critical: Session might have already expired or Redis is down
+    // Don't throw - allow logout to proceed
+  }
 }
 
 /**
  * Get all sessions for a user
  */
 export async function getUserSessions(userId: string): Promise<SessionData[]> {
-  const redis = getRedisClient()
-  const pattern = 'session:*'
+  const redis = await getConnectedRedisClient()
+  const userSessionsKey = `user:${userId}:sessions`
 
-  // Get all session keys
-  const keys = await redis.keys(pattern)
-  if (keys.length === 0) return []
+  // Get session IDs from set (O(1) instead of O(N) with keys())
+  const sessionIds = await redis.smembers(userSessionsKey)
+  if (sessionIds.length === 0) return []
 
   // Get all session data
-  const values = await redis.mget(...keys)
+  const sessionKeys = sessionIds.map((id) => `session:${id}`)
+  const values = await redis.mget(...sessionKeys)
 
   const sessions: SessionData[] = []
-  for (const value of values) {
-    if (!value) continue
+  for (let i = 0; i < values.length; i++) {
+    const value = values[i]
+    if (!value) {
+      // Session expired but still in set, clean it up
+      await redis.srem(userSessionsKey, sessionIds[i])
+      continue
+    }
 
     try {
       const sessionData: SessionData = JSON.parse(value)
-
-      // Only include sessions for this user that haven't expired
-      if (sessionData.userId === userId && sessionData.expiresAt > Date.now()) {
+      if (sessionData.expiresAt > Date.now()) {
         sessions.push(sessionData)
+      } else {
+        // Expired, clean up from set
+        await redis.srem(userSessionsKey, sessionIds[i])
       }
     } catch (error) {
       console.error('Error parsing session data:', error)
+      // Clean up invalid session from set
+      await redis.srem(userSessionsKey, sessionIds[i])
     }
   }
 
@@ -127,23 +172,30 @@ export async function getUserSessions(userId: string): Promise<SessionData[]> {
  * Useful when password changes or user logout from all devices
  */
 export async function deleteAllUserSessions(userId: string): Promise<number> {
-  const redis = getRedisClient()
-  const sessions = await getUserSessions(userId)
+  const redis = await getConnectedRedisClient()
+  const userSessionsKey = `user:${userId}:sessions`
 
-  if (sessions.length === 0) return 0
+  // Get session IDs from set
+  const sessionIds = await redis.smembers(userSessionsKey)
+  if (sessionIds.length === 0) return 0
 
-  const keys = sessions.map((s) => `session:${s.sessionId}`)
-  await redis.del(...keys)
+  const sessionKeys = sessionIds.map((id) => `session:${id}`)
 
-  return keys.length
+  const pipeline = redis.pipeline()
+  pipeline.del(...sessionKeys)
+  pipeline.del(userSessionsKey)
+  await pipeline.exec()
+
+  return sessionIds.length
 }
 
 /**
- * Extend session expiry
+ * Extend session expiry (sliding window)
+ * Only extends if more than 50% of session time has passed
  * Useful when user is active and we want to keep them logged in
  */
 export async function extendSession(sessionId: string): Promise<boolean> {
-  const redis = getRedisClient()
+  const redis = await getConnectedRedisClient()
   const key = `session:${sessionId}`
 
   const data = await redis.get(key)
@@ -151,9 +203,17 @@ export async function extendSession(sessionId: string): Promise<boolean> {
 
   try {
     const sessionData: SessionData = JSON.parse(data)
+    const now = Date.now()
+
+    // Only extend if more than 50% of session time has passed (3.5 days for 7-day sessions)
+    const halfwayPoint = sessionData.createdAt + (SESSION_EXPIRY_SECONDS * 1000) / 2
+
+    if (now < halfwayPoint) {
+      // Still in first half of session, don't extend yet
+      return true
+    }
 
     // Update expiry time
-    const now = Date.now()
     sessionData.expiresAt = now + SESSION_EXPIRY_SECONDS * 1000
 
     // Save back to Redis with new expiry
@@ -176,36 +236,12 @@ export async function isSessionValid(sessionId: string): Promise<boolean> {
 
 /**
  * Cleanup expired sessions (for maintenance)
- * Note: Redis TTL handles this automatically, but this can be used for manual cleanup
+ * Note: Redis TTL handles session cleanup automatically.
+ * Set cleanup happens lazily in getUserSessions().
+ * This function is kept for backward compatibility but does nothing.
  */
 export async function cleanupExpiredSessions(): Promise<number> {
-  const redis = getRedisClient()
-  const pattern = 'session:*'
-
-  const keys = await redis.keys(pattern)
-  if (keys.length === 0) return 0
-
-  const values = await redis.mget(...keys)
-  const expiredKeys: string[] = []
-
-  for (let i = 0; i < values.length; i++) {
-    const value = values[i]
-    if (!value) continue
-
-    try {
-      const sessionData: SessionData = JSON.parse(value)
-      if (sessionData.expiresAt < Date.now()) {
-        expiredKeys.push(keys[i])
-      }
-    } catch (error) {
-      // Invalid session data, mark for deletion
-      expiredKeys.push(keys[i])
-    }
-  }
-
-  if (expiredKeys.length > 0) {
-    await redis.del(...expiredKeys)
-  }
-
-  return expiredKeys.length
+  // Redis TTL auto-expires sessions
+  // Set cleanup happens lazily in getUserSessions()
+  return 0
 }

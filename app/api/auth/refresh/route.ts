@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { verifyRefreshToken, generateAccessToken, generateRefreshToken } from '@/lib/auth/jwt-node'
-import { getSession, extendSession } from '@/lib/auth/session'
+import { getSession, createSession, deleteSession, deleteAllUserSessions } from '@/lib/auth/session'
 
 /**
  * POST /api/auth/refresh
@@ -40,38 +40,51 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Verify session exists in Redis
-    const session = await getSession(payload.sessionId)
+    // Verify old session exists in Redis
+    const oldSession = await getSession(payload.sessionId)
 
-    if (!session) {
+    if (!oldSession) {
+      // Token reuse detected: Refresh token used but session doesn't exist
+      // This means the token was already used once (session was rotated)
+      // Attacker might have stolen the token - revoke all user sessions
+      console.warn(`[SECURITY] Token reuse detected for user ${payload.userId}`)
+      await deleteAllUserSessions(payload.userId)
+
       return NextResponse.json(
         {
           success: false,
           error: {
-            message: 'Session not found or expired',
-            code: 'SESSION_NOT_FOUND',
+            message: 'Token reuse detected. All sessions have been revoked for security.',
+            code: 'TOKEN_REUSE_DETECTED',
           },
         },
         { status: 401 }
       )
     }
 
-    // Extend session in Redis
-    await extendSession(payload.sessionId)
+    // Create new session with new ID (session rotation for security)
+    const newSession = await createSession({
+      userId: oldSession.userId,
+      email: oldSession.email,
+      role: oldSession.role,
+      userAgent: oldSession.userAgent,
+      ipAddress: oldSession.ipAddress,
+    })
 
-    // Generate new tokens (token rotation)
+    // Delete old session
+    await deleteSession(payload.sessionId)
+
+    // Generate new tokens with new session ID (token rotation, email not in JWT per GDPR)
     const newAccessToken = generateAccessToken({
       userId: payload.userId,
-      email: payload.email,
       role: payload.role,
-      sessionId: payload.sessionId,
+      sessionId: newSession.sessionId,
     })
 
     const newRefreshToken = generateRefreshToken({
       userId: payload.userId,
-      email: payload.email,
       role: payload.role,
-      sessionId: payload.sessionId,
+      sessionId: newSession.sessionId,
     })
 
     // Create response
@@ -89,8 +102,9 @@ export async function POST(request: NextRequest) {
     const cookieOptions = {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax' as const,
+      sameSite: 'strict' as const, // Strict to prevent CSRF attacks
       path: '/',
+      domain: process.env.COOKIE_DOMAIN || undefined, // Explicit domain (undefined = current domain)
     }
 
     response.cookies.set('accessToken', newAccessToken, {

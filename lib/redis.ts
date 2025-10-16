@@ -2,33 +2,69 @@ import Redis from 'ioredis'
 
 /**
  * Redis client configuration
- * Used for sessions, rate limiting, and token blacklist
+ *
+ * To switch to Upstash (Edge-compatible):
+ * 1. yarn add @upstash/redis
+ * 2. Set REDIS_PROVIDER=upstash in .env
+ * 3. Set UPSTASH_REDIS_REST_URL and UPSTASH_REDIS_REST_TOKEN
  */
 
 // Singleton Redis client
 let redis: Redis | null = null
+
+// Track connection promise to avoid race conditions
+let connectionPromise: Promise<void> | null = null
+
+/**
+ * Ensure Redis is connected
+ */
+async function ensureConnection(client: Redis): Promise<void> {
+  if (client.status === 'ready') {
+    return
+  }
+
+  if (client.status === 'connecting' && connectionPromise) {
+    return connectionPromise
+  }
+
+  if (client.status === 'end' || client.status === 'close') {
+    connectionPromise = client.connect()
+    return connectionPromise
+  }
+
+  // Status is 'wait' or other, initiate connection
+  connectionPromise = client.connect()
+  return connectionPromise
+}
 
 /**
  * Get or create Redis client instance
  */
 export function getRedisClient(): Redis {
   if (!redis) {
-    // Allow flexible Redis connection configuration
+    const provider = process.env.REDIS_PROVIDER || 'ioredis'
+
+    if (provider === 'upstash') {
+      throw new Error(
+        'Upstash Redis not implemented yet. ' +
+          'Set REDIS_PROVIDER=ioredis or implement Upstash adapter.'
+      )
+    }
+
+    // IORedis (default) - works with standard Redis
     const redisUrl = process.env.REDIS_URL
 
     if (redisUrl) {
-      // Use connection URL if provided
       redis = new Redis(redisUrl, {
         maxRetriesPerRequest: 3,
         retryStrategy(times) {
           const delay = Math.min(times * 50, 2000)
           return delay
         },
-        lazyConnect: true, // Don't connect immediately
-        enableOfflineQueue: false, // Fail fast if not connected
+        lazyConnect: true,
+        enableOfflineQueue: false,
       })
     } else {
-      // Use individual connection parameters
       redis = new Redis({
         host: process.env.REDIS_HOST || 'localhost',
         port: parseInt(process.env.REDIS_PORT || '6379'),
@@ -39,12 +75,11 @@ export function getRedisClient(): Redis {
           const delay = Math.min(times * 50, 2000)
           return delay
         },
-        lazyConnect: true, // Don't connect immediately
-        enableOfflineQueue: false, // Fail fast if not connected
+        lazyConnect: true,
+        enableOfflineQueue: false,
       })
     }
 
-    // Error handling
     redis.on('error', (err) => {
       console.error('Redis connection error:', err.message)
     })
@@ -53,9 +88,8 @@ export function getRedisClient(): Redis {
       console.log('Redis connected successfully')
     })
 
-    // Try to connect
-    redis.connect().catch((err) => {
-      console.error('Failed to connect to Redis:', err.message)
+    redis.on('ready', () => {
+      connectionPromise = null // Reset after successful connection
     })
   }
 
@@ -63,8 +97,17 @@ export function getRedisClient(): Redis {
 }
 
 /**
+ * Get Redis client and ensure it's connected
+ * Use this in async contexts where you need guaranteed connection
+ */
+export async function getConnectedRedisClient(): Promise<Redis> {
+  const client = getRedisClient()
+  await ensureConnection(client)
+  return client
+}
+
+/**
  * Close Redis connection
- * Use during application shutdown
  */
 export async function closeRedisConnection(): Promise<void> {
   if (redis) {
@@ -74,7 +117,7 @@ export async function closeRedisConnection(): Promise<void> {
 }
 
 /**
- * Check if Redis is connected and healthy
+ * Check if Redis is healthy
  */
 export async function isRedisHealthy(): Promise<boolean> {
   try {

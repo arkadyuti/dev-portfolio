@@ -67,6 +67,15 @@ async function handler(request: NextRequest) {
     // Find user by email
     const user = await User.findOne({ email: email.toLowerCase() })
 
+    // Always perform bcrypt operation to prevent timing attacks (constant time)
+    // If user doesn't exist, compare against dummy hash
+    const hashToCompare = user
+      ? user.passwordHash
+      : '$2b$10$dummyHashToPreventTimingAttack1234567890abcdefghijklmnopqrstuv' // Dummy bcrypt hash
+
+    // Verify password (always called regardless of user existence)
+    const isPasswordValid = await comparePassword(password, hashToCompare)
+
     if (!user) {
       return NextResponse.json(
         {
@@ -95,9 +104,7 @@ async function handler(request: NextRequest) {
       )
     }
 
-    // Verify password
-    const isPasswordValid = await comparePassword(password, user.passwordHash)
-
+    // Password was already verified above (constant-time comparison)
     if (!isPasswordValid) {
       // Increment failed login attempts
       await user.incrementFailedAttempts()
@@ -136,22 +143,20 @@ async function handler(request: NextRequest) {
       ipAddress: clientIP,
     })
 
-    // Generate JWT tokens
+    // Generate JWT tokens (email not included per GDPR compliance)
     const accessToken = generateAccessToken({
       userId: user._id.toString(),
-      email: user.email,
       role: user.role,
       sessionId: session.sessionId,
     })
 
     const refreshToken = generateRefreshToken({
       userId: user._id.toString(),
-      email: user.email,
       role: user.role,
       sessionId: session.sessionId,
     })
 
-    // Create response
+    // Create response (sessionId only in HTTP-only cookie, not in response body)
     const response = NextResponse.json(
       {
         success: true,
@@ -162,7 +167,6 @@ async function handler(request: NextRequest) {
             name: user.name,
             role: user.role,
           },
-          sessionId: session.sessionId,
         },
       },
       { status: 200 }
@@ -172,8 +176,9 @@ async function handler(request: NextRequest) {
     const cookieOptions = {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax' as const,
+      sameSite: 'strict' as const, // Strict to prevent CSRF attacks
       path: '/',
+      domain: process.env.COOKIE_DOMAIN || undefined, // Explicit domain (undefined = current domain)
     }
 
     // Access token expires in 15 minutes

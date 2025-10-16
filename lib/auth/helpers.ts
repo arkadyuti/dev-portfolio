@@ -1,7 +1,9 @@
 import { cookies } from 'next/headers'
 import { verifyAccessToken } from './jwt-edge'
-import { getSession } from './session'
+import { getSession, extendSession } from './session'
 import type { UserRole } from '@/models/user'
+import User from '@/models/user'
+import connectToDatabase from '@/lib/mongodb'
 
 /**
  * User data interface for helpers
@@ -42,11 +44,41 @@ export async function getCurrentUser(): Promise<AuthUser | null> {
       return null
     }
 
-    return {
-      id: payload.userId,
-      email: payload.email,
-      role: payload.role as UserRole,
-      sessionId: payload.sessionId,
+    // Revalidate user role from database (in case it changed)
+    // This prevents privilege escalation if admin demotes user
+    try {
+      await connectToDatabase()
+      const user = await User.findById(payload.userId).select('role email').lean()
+
+      if (!user) {
+        // User deleted, invalidate session
+        return null
+      }
+
+      // Use fresh role from database, not from JWT
+      const currentRole = user.role as UserRole
+
+      // Extend session if halfway through TTL (sliding window for active users)
+      // Fire-and-forget to avoid blocking the request
+      extendSession(payload.sessionId).catch((err) =>
+        console.error('Session extension failed:', err)
+      )
+
+      return {
+        id: payload.userId,
+        email: user.email, // Email from database (freshest source)
+        role: currentRole, // Role from database (revalidated)
+        sessionId: payload.sessionId,
+      }
+    } catch (error) {
+      console.error('Error revalidating user from database:', error)
+      // Fallback to session data if DB lookup fails
+      return {
+        id: payload.userId,
+        email: session.email,
+        role: payload.role as UserRole,
+        sessionId: payload.sessionId,
+      }
     }
   } catch (error) {
     console.error('Error getting current user:', error)

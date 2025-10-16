@@ -13,24 +13,76 @@ const PASSWORD_REQUIREMENTS = {
 }
 
 /**
+ * Bcrypt concurrency semaphore to prevent CPU DoS
+ * Limits concurrent bcrypt operations to prevent server overload
+ */
+class BcryptSemaphore {
+  private queue: Array<() => void> = []
+  private running = 0
+  private readonly maxConcurrent: number
+
+  constructor(maxConcurrent: number = 3) {
+    this.maxConcurrent = maxConcurrent
+  }
+
+  async acquire(): Promise<void> {
+    if (this.running < this.maxConcurrent) {
+      this.running++
+      return
+    }
+
+    return new Promise<void>((resolve) => {
+      this.queue.push(resolve)
+    })
+  }
+
+  release(): void {
+    this.running--
+    const next = this.queue.shift()
+    if (next) {
+      this.running++
+      next()
+    }
+  }
+
+  async execute<T>(fn: () => Promise<T>): Promise<T> {
+    await this.acquire()
+    try {
+      return await fn()
+    } finally {
+      this.release()
+    }
+  }
+}
+
+// Global semaphore instance (max 3 concurrent bcrypt operations)
+const bcryptSemaphore = new BcryptSemaphore(3)
+
+/**
  * Hash a plain text password
+ * Limited by semaphore to prevent CPU DoS attacks
  */
 export async function hashPassword(password: string): Promise<string> {
-  const saltRounds = 10
-  const hash = await bcrypt.hash(password, saltRounds)
-  return hash
+  return bcryptSemaphore.execute(async () => {
+    const saltRounds = 10
+    const hash = await bcrypt.hash(password, saltRounds)
+    return hash
+  })
 }
 
 /**
  * Compare a plain text password with a hash
+ * Limited by semaphore to prevent CPU DoS attacks
  */
 export async function comparePassword(password: string, hash: string): Promise<boolean> {
-  try {
-    return await bcrypt.compare(password, hash)
-  } catch (error) {
-    console.error('Error comparing passwords:', error)
-    return false
-  }
+  return bcryptSemaphore.execute(async () => {
+    try {
+      return await bcrypt.compare(password, hash)
+    } catch (error) {
+      console.error('Error comparing passwords:', error)
+      return false
+    }
+  })
 }
 
 /**

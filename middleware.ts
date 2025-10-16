@@ -3,10 +3,15 @@ import { verifyAccessToken } from '@/lib/auth/jwt-edge'
 
 /**
  * Middleware to protect routes
- * Verifies access token validity
+ * Verifies JWT validity (Edge runtime compatible)
  *
- * Note: Redis session validation happens in server components/API routes
- * Middleware only does JWT validation (Edge runtime compatible)
+ * Note: Redis session validation happens in Server Components (app/admin/layout.tsx)
+ * because ioredis is not compatible with Edge runtime, and Next.js 15 middleware
+ * always runs on Edge runtime regardless of the runtime export.
+ *
+ * This creates a ~15 minute window (JWT expiry) where revoked sessions can still
+ * access protected routes at the middleware level, but the admin layout will
+ * immediately check Redis and redirect if session is revoked.
  */
 export async function middleware(request: NextRequest) {
   try {
@@ -33,6 +38,7 @@ export async function middleware(request: NextRequest) {
     }
 
     // User has valid JWT, allow request
+    // Redis session validation happens in admin layout (Server Component)
     return NextResponse.next()
   } catch (error) {
     console.error('Middleware error:', error)

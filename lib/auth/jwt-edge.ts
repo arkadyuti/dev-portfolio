@@ -2,12 +2,13 @@ import * as jose from 'jose'
 
 /**
  * JWT Payload interface
+ * Note: Email removed from JWT to comply with GDPR (PII should not be in tokens)
  */
 export interface JWTPayload {
   userId: string
-  email: string
   role: string
   sessionId: string
+  v?: number // Secret version for rotation support
   iat?: number
   exp?: number
 }
@@ -38,16 +39,22 @@ export async function verifyAccessToken(token: string): Promise<JWTPayload | nul
     const secret = getEdgeSecretKey(JWT_ACCESS_SECRET)
     const { payload } = await jose.jwtVerify(token, secret, {
       algorithms: ['HS256'],
+      maxTokenAge: '15m', // Extra safety: reject if older than 15 min
+      clockTolerance: 0, // No clock skew tolerance
     })
 
     // Validate payload has required fields
     if (
       !payload ||
       typeof payload.userId !== 'string' ||
-      typeof payload.email !== 'string' ||
       typeof payload.role !== 'string' ||
       typeof payload.sessionId !== 'string'
     ) {
+      return null
+    }
+
+    // Validate role is one of the allowed values
+    if (!['admin', 'editor', 'viewer'].includes(payload.role as string)) {
       return null
     }
 
