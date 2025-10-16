@@ -4,6 +4,7 @@ import { ThemeProvider } from '@/components/theme-provider'
 import { Metadata } from 'next'
 import { Header } from '@/components/header'
 import { Footer } from '@/components/footer'
+import { BottomNav } from '@/components/bottom-nav'
 
 import './global.css'
 import { Providers } from './providers'
@@ -134,8 +135,9 @@ export default async function RootLayout({ children }: { children: React.ReactNo
               <Sonner />
               <div className="flex min-h-screen flex-col">
                 <Header />
-                <main className="flex-grow">{children}</main>
+                <main className="flex-grow pb-16 md:pb-0">{children}</main>
                 <Footer />
+                <BottomNav />
               </div>
             </TooltipProvider>
           </ThemeProvider>

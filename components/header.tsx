@@ -1,21 +1,14 @@
 'use client'
 import { useState } from 'react'
 import Link from '@/components/ui/Link'
-import { Home, FileText, User, Briefcase, Search } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { ThemeToggle } from '@/components/theme-toggle'
 import { cn } from '@/lib/utils'
 import { profile } from '@/data/profile-data'
+import { mainNavItems, searchNavItem } from './nav-items'
 
 export function Header() {
   const [isMenuOpen, setIsMenuOpen] = useState(false)
-
-  const navItems = [
-    { name: 'Home', href: '/', icon: Home },
-    { name: 'Blog', href: '/blogs', icon: FileText },
-    { name: 'About', href: '/about', icon: User },
-    { name: 'Projects', href: '/projects', icon: Briefcase },
-  ]
 
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur">
@@ -32,7 +25,7 @@ export function Header() {
 
         {/* Desktop Navigation */}
         <nav className="hidden items-center gap-1 md:flex">
-          {navItems.map((item) => (
+          {mainNavItems.map((item) => (
             <Button key={item.name} variant="ghost" asChild className="text-base font-normal">
               <Link href={item.href} className="flex items-center gap-2">
                 <item.icon className="h-4 w-4" />
@@ -41,9 +34,9 @@ export function Header() {
             </Button>
           ))}
           <Button variant="ghost" size="icon">
-            <Link href="/search" className="flex items-center">
-              <Search className="h-5 w-5" />
-              <span className="sr-only">Search</span>
+            <Link href={searchNavItem.href} className="flex items-center">
+              <searchNavItem.icon className="h-5 w-5" />
+              <span className="sr-only">{searchNavItem.name}</span>
             </Link>
           </Button>
           <ThemeToggle />
@@ -51,6 +44,12 @@ export function Header() {
 
         {/* Mobile Menu Button */}
         <div className="flex items-center gap-2 md:hidden">
+          <Button variant="ghost" size="icon">
+            <Link href={searchNavItem.href} className="flex items-center">
+              <searchNavItem.icon className="h-5 w-5" />
+              <span className="sr-only">{searchNavItem.name}</span>
+            </Link>
+          </Button>
           <ThemeToggle />
           <Button
             variant="ghost"
@@ -99,7 +98,7 @@ export function Header() {
           <div className="mb-2 border-b pb-2 text-sm font-medium text-muted-foreground">
             {profile.name}
           </div>
-          {navItems.map((item) => (
+          {mainNavItems.map((item) => (
             <Button
               key={item.name}
               variant="ghost"
@@ -119,9 +118,9 @@ export function Header() {
             asChild
             onClick={() => setIsMenuOpen(false)}
           >
-            <Link href="/search" className="flex items-center gap-2">
-              <Search className="h-5 w-5" />
-              Search
+            <Link href={searchNavItem.href} className="flex items-center gap-2">
+              <searchNavItem.icon className="h-5 w-5" />
+              {searchNavItem.name}
             </Link>
           </Button>
         </div>
