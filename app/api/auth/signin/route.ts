@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { z } from 'zod'
 import User from '@/models/user'
 import { comparePassword } from '@/lib/auth/password'
-import { generateAccessToken, generateRefreshToken } from '@/lib/auth/jwt'
+import { generateAccessToken, generateRefreshToken } from '@/lib/auth/jwt-node'
 import { createSession } from '@/lib/auth/session'
 import {
   checkRateLimit,

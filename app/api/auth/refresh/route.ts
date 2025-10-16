@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { verifyRefreshToken, generateAccessToken, generateRefreshToken } from '@/lib/auth/jwt'
+import { verifyRefreshToken, generateAccessToken, generateRefreshToken } from '@/lib/auth/jwt-node'
 import { getSession, extendSession } from '@/lib/auth/session'
 
 /**

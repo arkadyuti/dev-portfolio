@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { verifyAccessToken } from '@/lib/auth/jwt'
+import { verifyAccessToken } from '@/lib/auth/jwt-edge'
 import { getUserSessions, deleteSession, deleteAllUserSessions } from '@/lib/auth/session'
 
 /**

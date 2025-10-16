@@ -1,5 +1,5 @@
 import { cookies } from 'next/headers'
-import { verifyAccessToken } from './jwt'
+import { verifyAccessToken } from './jwt-edge'
 import { getSession } from './session'
 import type { UserRole } from '@/models/user'
 

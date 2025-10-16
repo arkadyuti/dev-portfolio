@@ -1,5 +1,4 @@
 import jwt from 'jsonwebtoken'
-import * as jose from 'jose'
 
 /**
  * JWT Payload interface
@@ -29,11 +28,6 @@ if (!JWT_ACCESS_SECRET || !JWT_REFRESH_SECRET) {
 }
 
 /**
- * Edge-compatible secret keys for jose library
- */
-const getEdgeSecretKey = (secret: string) => new TextEncoder().encode(secret)
-
-/**
  * Generate access token (short-lived)
  */
 export function generateAccessToken(payload: Omit<JWTPayload, 'iat' | 'exp'>): string {
@@ -52,35 +46,6 @@ export function generateRefreshToken(payload: Omit<JWTPayload, 'iat' | 'exp'>): 
     expiresIn: REFRESH_TOKEN_EXPIRY,
     algorithm: 'HS256',
   })
-}
-
-/**
- * Verify and decode access token
- * Uses jose library for Edge runtime compatibility
- */
-export async function verifyAccessToken(token: string): Promise<JWTPayload | null> {
-  try {
-    const secret = getEdgeSecretKey(JWT_ACCESS_SECRET)
-    const { payload } = await jose.jwtVerify(token, secret, {
-      algorithms: ['HS256'],
-    })
-
-    // Validate payload has required fields
-    if (
-      !payload ||
-      typeof payload.userId !== 'string' ||
-      typeof payload.email !== 'string' ||
-      typeof payload.role !== 'string' ||
-      typeof payload.sessionId !== 'string'
-    ) {
-      return null
-    }
-
-    return payload as unknown as JWTPayload
-  } catch (error) {
-    // Token expired, invalid, or malformed (silent fail for security)
-    return null
-  }
 }
 
 /**

@@ -9,6 +9,7 @@ Industry-standard JWT-based authentication with Redis session management, MongoD
 ### Authentication Flow
 
 1. **Login** (`POST /api/auth/signin`):
+
    - User submits email/password
    - Rate limiting: 5 attempts per 15 minutes per IP
    - Password verified with bcrypt
@@ -17,16 +18,19 @@ Industry-standard JWT-based authentication with Redis session management, MongoD
    - Tokens stored in HTTP-only, secure cookies
 
 2. **Authorization** (Middleware):
+
    - Edge-compatible JWT verification using `jose` library
    - Validates access token on every request to `/admin/*`
    - Redirects to `/signin` if invalid/missing token
 
 3. **Session Management**:
+
    - Sessions stored in Redis with auto-expiry (7 days TTL)
    - Server-side validation via `getCurrentUser()` helper
    - Support for viewing and revoking active sessions
 
 4. **Token Refresh** (`POST /api/auth/refresh`):
+
    - Uses refresh token to get new access token
    - Token rotation (new refresh token issued)
    - Extends session in Redis
@@ -38,6 +42,7 @@ Industry-standard JWT-based authentication with Redis session management, MongoD
 ### Key Features
 
 **Security:**
+
 - Account lockout after 5 failed login attempts (30 min)
 - IP-based rate limiting (prevents brute force)
 - HTTP-only, secure, sameSite cookies (XSS protection)
@@ -46,23 +51,35 @@ Industry-standard JWT-based authentication with Redis session management, MongoD
 - Audit fields (lastLogin, passwordChangedAt)
 
 **Session Management:**
+
 - View all active sessions
 - Revoke individual or all sessions
 - Automatic session expiry
 - Session extends on activity
 
 **Single Admin User:**
+
 - Database-enforced: only one admin allowed
 - Created via setup script (`yarn setup-admin`, not in .env)
 - Future support for editor/viewer roles
 
 ## Key Files
 
-- `lib/auth/jwt.ts` - JWT generation/verification (dual runtime: jose for Edge, jsonwebtoken for Node.js)
+**JWT Libraries (Dual Runtime):**
+
+- `lib/auth/jwt-edge.ts` - JWT verification using `jose` (Edge Runtime: middleware, helpers)
+- `lib/auth/jwt-node.ts` - JWT generation/verification using `jsonwebtoken` (Node.js: API routes)
+  - **Why two libraries?** Middleware runs on Edge Runtime (no Node.js APIs), so we use `jose` (Web Crypto API). API routes run on Node.js where `jsonwebtoken` is available and provides sync methods.
+
+**Auth Utilities:**
+
 - `lib/auth/session.ts` - Redis session CRUD operations with TTL management
 - `lib/auth/password.ts` - bcrypt hashing and password strength validation
 - `lib/auth/rate-limit.ts` - IP-based rate limiting using Redis
 - `lib/auth/helpers.ts` - Server-side auth utilities (`getCurrentUser()`, `requireAuth()`, `requireAdmin()`)
+
+**Infrastructure:**
+
 - `lib/redis.ts` - Singleton Redis client with lazy connection
 - `models/user.ts` - MongoDB User schema with lockout protection and single admin enforcement
 - `middleware.ts` - Edge-compatible JWT verification protecting `/admin/*` routes
@@ -79,10 +96,10 @@ Industry-standard JWT-based authentication with Redis session management, MongoD
 
 ```typescript
 interface IUser {
-  email: string           // Unique, lowercase
-  passwordHash: string    // bcrypt hash (10 rounds)
+  email: string // Unique, lowercase
+  passwordHash: string // bcrypt hash (10 rounds)
   name: string
-  role: UserRole          // 'admin' | 'editor' | 'viewer'
+  role: UserRole // 'admin' | 'editor' | 'viewer'
   failedLoginAttempts: number
   accountLockedUntil?: Date
   lastLogin?: Date
@@ -93,11 +110,13 @@ interface IUser {
 ```
 
 **Methods:**
+
 - `incrementFailedAttempts()` - Track failed login, lock account after 5 attempts (30 min)
 - `resetFailedAttempts()` - Clear failed attempts on successful login
 - `isLocked()` - Check if account is currently locked
 
 **Hooks:**
+
 - Pre-save: Enforce single admin user constraint (throws if >1 admin)
 
 ### Session Data (Redis)
@@ -106,14 +125,14 @@ Key: `session:{sessionId}`, Value: JSON string, TTL: 7 days
 
 ```typescript
 interface SessionData {
-  sessionId: string       // nanoid(32)
+  sessionId: string // nanoid(32)
   userId: string
   email: string
   role: UserRole
   userAgent: string
   ipAddress: string
-  createdAt: number       // Unix timestamp
-  expiresAt: number       // Unix timestamp
+  createdAt: number // Unix timestamp
+  expiresAt: number // Unix timestamp
 }
 ```
 
@@ -125,12 +144,13 @@ interface JWTPayload {
   email: string
   role: string
   sessionId: string
-  iat?: number            // Issued at (auto-added)
-  exp?: number            // Expiry (auto-added)
+  iat?: number // Issued at (auto-added)
+  exp?: number // Expiry (auto-added)
 }
 ```
 
 **Token Expiry:**
+
 - Access token: 15 minutes
 - Refresh token: 7 days
 
@@ -156,23 +176,27 @@ const adminCheck = await isAdmin() // Returns: boolean
 ## Security Implementation
 
 ### Rate Limiting
+
 - **Storage:** Redis key `rate-limit:login:{ipAddress}`, TTL: 15 minutes
 - **Limit:** 5 login attempts per 15 minutes per IP
 - **Response:** 429 status with retry-after header
 
 ### Account Lockout
+
 - **Trigger:** 5 consecutive failed login attempts
 - **Duration:** 30 minutes (stored in `accountLockedUntil`)
 - **Reset:** Automatic after lockout period, or on successful login
 
 ### Password Security
+
 - **Hashing:** bcrypt with 10 rounds
 - **Validation:** Min 8 chars, uppercase, lowercase, number, special char
 
 ### JWT Security
+
 - **Algorithm:** HS256 (HMAC SHA-256)
 - **Storage:** HTTP-only cookies (XSS protection)
-- **Dual Runtime:** `jose` for Edge (middleware), `jsonwebtoken` for Node.js (API routes)
+- **Dual Runtime:** Split into `jwt-edge.ts` (jose) and `jwt-node.ts` (jsonwebtoken) for Edge/Node.js compatibility
 - **Token Rotation:** New refresh token issued on each refresh
 
 ### Middleware Protection
@@ -180,11 +204,12 @@ const adminCheck = await isAdmin() // Returns: boolean
 ```typescript
 // middleware.ts
 export const config = {
-  matcher: ['/admin/:path*']
+  matcher: ['/admin/:path*'],
 }
 ```
 
 **Flow:**
+
 1. Extract `accessToken` cookie
 2. Verify JWT using `jose` (Edge-compatible)
 3. If valid → allow request
