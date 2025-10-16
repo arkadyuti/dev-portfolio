@@ -1,10 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server'
-import connectToDatabase from '@/lib/mongodb'
 import BlogModels, { transformToBlogs } from '@/models/blog'
 import ProjectModels, { transformToProjects } from '@/models/project'
 import { logger } from '@/lib/logger'
+import { withDatabase } from '@/lib/api-middleware'
 
-export async function GET(req: NextRequest) {
+async function handler(req: NextRequest) {
   try {
     const url = new URL(req.url)
     const query = url.searchParams.get('q') || ''
@@ -15,8 +15,6 @@ export async function GET(req: NextRequest) {
         data: { blogs: [], projects: [] },
       })
     }
-
-    await connectToDatabase()
 
     // Create a case-insensitive search regex
     const searchRegex = { $regex: query, $options: 'i' }
@@ -50,3 +48,5 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ success: false, message: 'Failed to search' }, { status: 500 })
   }
 }
+
+export const GET = withDatabase(handler)

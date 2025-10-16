@@ -39,6 +39,7 @@ async function connectToDatabase() {
       // Add connection pooling options
       maxPoolSize: 10,
       minPoolSize: 5,
+      maxIdleTimeMS: 10000, // Close idle connections after 10 seconds (critical for serverless)
       socketTimeoutMS: 45000,
       connectTimeoutMS: 10000,
       serverSelectionTimeoutMS: 10000,
@@ -82,8 +83,8 @@ async function connectToDatabase() {
 
 // Only register these event listeners once
 if (!global.mongoEventListenersRegistered) {
-  // Add event listeners for MongoDB connection
-  mongoose.connection.on('connected', () => {
+  // Add event listeners for MongoDB connection (use .once() to prevent memory leaks)
+  mongoose.connection.once('connected', () => {
     const isProduction = process.env.NODE_ENV === 'production'
     const isBuildTime = process.env.NEXT_PHASE === 'phase-production-build'
 
@@ -105,19 +106,47 @@ if (!global.mongoEventListenersRegistered) {
     }
   })
 
-  // Handle graceful shutdown
-  process.on('SIGINT', async () => {
+  // Handle graceful shutdown (SIGINT for Ctrl+C, SIGTERM for Docker/Kubernetes)
+  const gracefulShutdown = async (signal: string) => {
     try {
       await mongoose.connection.close()
-      logger.info('MongoDB connection closed due to application termination')
+      logger.info(`MongoDB connection closed due to ${signal}`)
       process.exit(0)
     } catch (error) {
       logger.error('Error closing MongoDB connection', { error })
       process.exit(1)
     }
-  })
+  }
+
+  process.once('SIGINT', () => gracefulShutdown('SIGINT'))
+  process.once('SIGTERM', () => gracefulShutdown('SIGTERM'))
 
   global.mongoEventListenersRegistered = true
+}
+
+/**
+ * Check if MongoDB is currently connected
+ */
+export function isConnected(): boolean {
+  return mongoose.connection.readyState === 1
+}
+
+/**
+ * Get the current connection state
+ * 0 = disconnected
+ * 1 = connected
+ * 2 = connecting
+ * 3 = disconnecting
+ */
+export function getConnectionState(): number {
+  return mongoose.connection.readyState
+}
+
+/**
+ * Get cached connection instance (may be null)
+ */
+export function getCachedConnection() {
+  return cached?.conn || null
 }
 
 export default connectToDatabase

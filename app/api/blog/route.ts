@@ -3,8 +3,9 @@ import { v4 as uuidv4 } from 'uuid'
 import BlogModels from 'models/blog'
 import logger from '@/lib/logger'
 import { uploadTempImage, moveToFinalLocation } from '@/lib/image-upload'
+import { withDatabase } from '@/lib/api-middleware'
 
-export async function POST(request: NextRequest) {
+async function handler(request: NextRequest) {
   try {
     logger.info('Starting blog post processing')
     const formData = await request.formData()
@@ -151,3 +152,6 @@ export async function POST(request: NextRequest) {
     )
   }
 }
+
+// Export the handler wrapped with database middleware
+export const POST = withDatabase(handler)

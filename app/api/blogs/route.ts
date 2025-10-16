@@ -2,8 +2,9 @@ import { NextRequest, NextResponse } from 'next/server'
 import BlogModels, { transformToBlogs } from 'models/blog'
 import { ZodError } from 'zod'
 import { logger } from '@/lib/logger'
+import { withDatabase } from '@/lib/api-middleware'
 
-export async function GET(request: NextRequest) {
+async function handler(request: NextRequest) {
   try {
     const searchParams = request.nextUrl.searchParams
     const page = parseInt(searchParams.get('page') || '1')
@@ -64,3 +65,6 @@ export async function GET(request: NextRequest) {
     )
   }
 }
+
+// Export the handler wrapped with database middleware
+export const GET = withDatabase(handler)

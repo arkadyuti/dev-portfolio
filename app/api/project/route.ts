@@ -3,8 +3,9 @@ import { v4 as uuidv4 } from 'uuid'
 import ProjectModels from 'models/project'
 import { logger } from '@/lib/logger'
 import { uploadTempImage, moveToFinalLocation } from '@/lib/image-upload'
+import { withDatabase } from '@/lib/api-middleware'
 
-export async function POST(request: NextRequest) {
+async function handler(request: NextRequest) {
   try {
     const formData = await request.formData()
     const coverImage = formData.get('coverImage') as File
@@ -107,3 +108,5 @@ export async function POST(request: NextRequest) {
     )
   }
 }
+
+export const POST = withDatabase(handler)

@@ -2,9 +2,10 @@ import { NextRequest, NextResponse } from 'next/server'
 import ProjectModels, { transformToProject } from 'models/project'
 import { deleteFile } from '@/lib/minio'
 import { logger } from '@/lib/logger'
+import { withDatabase } from '@/lib/api-middleware'
 
 // GET a single project by ID
-export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+async function getHandler(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const { id } = await params
     const project = await ProjectModels.findOne({ id }).lean()
@@ -27,7 +28,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
 }
 
 // DELETE a project by ID
-export async function DELETE(
+async function deleteHandler(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
@@ -61,3 +62,6 @@ export async function DELETE(
     )
   }
 }
+
+export const GET = withDatabase(getHandler)
+export const DELETE = withDatabase(deleteHandler)

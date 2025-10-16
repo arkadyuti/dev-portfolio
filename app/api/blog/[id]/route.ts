@@ -2,8 +2,9 @@ import { NextRequest, NextResponse } from 'next/server'
 import BlogModels, { transformToBlog } from 'models/blog'
 import { ZodError } from 'zod'
 import { queueFileDeletion, queueFileDeletions } from '@/lib/background-tasks'
+import { withDatabase } from '@/lib/api-middleware'
 
-export async function GET(request: NextRequest, context: { params: Promise<{ id: string }> }) {
+async function getHandler(request: NextRequest, context: { params: Promise<{ id: string }> }) {
   try {
     const { id } = await context.params
 
@@ -41,7 +42,7 @@ export async function GET(request: NextRequest, context: { params: Promise<{ id:
   }
 }
 
-export async function DELETE(request: NextRequest, context: { params: Promise<{ id: string }> }) {
+async function deleteHandler(request: NextRequest, context: { params: Promise<{ id: string }> }) {
   try {
     const { id } = await context.params
 
@@ -80,3 +81,7 @@ export async function DELETE(request: NextRequest, context: { params: Promise<{ 
     )
   }
 }
+
+// Export handlers wrapped with database middleware
+export const GET = withDatabase(getHandler)
+export const DELETE = withDatabase(deleteHandler)

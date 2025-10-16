@@ -1,14 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server'
 import NewsletterModel, { transformToNewsletter } from 'models/newsletter'
-import connectToDatabase from '@/lib/mongodb'
 import { v4 as uuidv4 } from 'uuid'
 import { logger } from '@/lib/logger'
+import { withDatabase } from '@/lib/api-middleware'
 
-export async function POST(request: NextRequest) {
+async function handler(request: NextRequest) {
   try {
-    // Connect to database
-    await connectToDatabase()
-
     // Parse request body
     const data = await request.json()
     const { email } = data
@@ -51,3 +48,5 @@ export async function POST(request: NextRequest) {
     )
   }
 }
+
+export const POST = withDatabase(handler)

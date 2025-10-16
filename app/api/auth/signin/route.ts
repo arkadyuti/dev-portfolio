@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { z } from 'zod'
-import connectDB from '@/lib/mongodb'
 import User from '@/models/user'
 import { comparePassword } from '@/lib/auth/password'
 import { generateAccessToken, generateRefreshToken } from '@/lib/auth/jwt'
@@ -11,6 +10,7 @@ import {
   formatRateLimitError,
   resetRateLimit,
 } from '@/lib/auth/rate-limit'
+import { withDatabase } from '@/lib/api-middleware'
 
 /**
  * Sign in request schema
@@ -24,7 +24,7 @@ const signInSchema = z.object({
  * POST /api/auth/signin
  * Authenticate user and create session
  */
-export async function POST(request: NextRequest) {
+async function handler(request: NextRequest) {
   try {
     // Parse request body
     const body = await request.json()
@@ -63,9 +63,6 @@ export async function POST(request: NextRequest) {
         { status: 429 }
       )
     }
-
-    // Connect to database
-    await connectDB()
 
     // Find user by email
     const user = await User.findOne({ email: email.toLowerCase() })
@@ -207,3 +204,6 @@ export async function POST(request: NextRequest) {
     )
   }
 }
+
+// Export the handler wrapped with database middleware
+export const POST = withDatabase(handler)

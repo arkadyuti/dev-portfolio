@@ -2,8 +2,9 @@ import { NextRequest, NextResponse } from 'next/server'
 import BlogModels from 'models/blog'
 import ProjectModels from 'models/project'
 import { logger } from '@/lib/logger'
+import { withDatabase } from '@/lib/api-middleware'
 
-export async function GET(request: NextRequest) {
+async function handler(request: NextRequest) {
   try {
     // Get all unique tags from blogs and projects in parallel
     const [blogs, projects] = await Promise.all([
@@ -57,3 +58,5 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ success: false, message: 'Failed to fetch tags' }, { status: 500 })
   }
 }
+
+export const GET = withDatabase(handler)

@@ -1,11 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server'
 import BlogModels from 'models/blog'
 import logger from '@/lib/logger'
-import connectToDatabase from '@/lib/mongodb'
+import { withDatabase } from '@/lib/api-middleware'
 
-export async function POST(request: NextRequest, context: { params: Promise<{ id: string }> }) {
+async function postHandler(request: NextRequest, context: { params: Promise<{ id: string }> }) {
   try {
-    await connectToDatabase()
     const { id } = await context.params
 
     // Get client IP for basic duplicate protection
@@ -50,9 +49,8 @@ export async function POST(request: NextRequest, context: { params: Promise<{ id
 }
 
 // GET endpoint to retrieve current view count
-export async function GET(request: NextRequest, context: { params: Promise<{ id: string }> }) {
+async function getHandler(request: NextRequest, context: { params: Promise<{ id: string }> }) {
   try {
-    await connectToDatabase()
     const { id } = await context.params
 
     const blog = await BlogModels.findOne({ id }, { views: 1, id: 1 }).lean()
@@ -76,3 +74,7 @@ export async function GET(request: NextRequest, context: { params: Promise<{ id:
     )
   }
 }
+
+// Export handlers wrapped with database middleware
+export const POST = withDatabase(postHandler)
+export const GET = withDatabase(getHandler)

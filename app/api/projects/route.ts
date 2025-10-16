@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
 import ProjectModels, { transformToProjects } from 'models/project'
 import { logger } from '@/lib/logger'
+import { withDatabase } from '@/lib/api-middleware'
 
-export async function GET(request: NextRequest) {
+async function handler(request: NextRequest) {
   try {
     const { searchParams } = request.nextUrl
     const fetchAll = searchParams.get('fetchAll') === 'true'
@@ -39,3 +40,6 @@ export async function GET(request: NextRequest) {
     )
   }
 }
+
+// Export the handler wrapped with database middleware
+export const GET = withDatabase(handler)
