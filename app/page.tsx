@@ -20,9 +20,9 @@ export const dynamic = 'force-dynamic'
 // Generate metadata for homepage
 export async function generateMetadata(): Promise<Metadata> {
   return genPageMetadata({
-    title: `${profile.name} - ${profile.title}`,
+    title: `${profile.name} | ${profile.title} | React, TypeScript, AI Expert`,
     description: profile.bio,
-    keywords: `${profile.name}, Associate Architect, Tekion, AI Developer Workflows, Model Context Protocol, MCP, Enterprise Architecture, CI/CD Optimization, React Expert, TypeScript, Portfolio`,
+    keywords: `${profile.name}, Associate Architect, Tekion, AI Developer Workflows, Model Context Protocol, MCP, Enterprise Architecture, CI/CD Optimization, React Expert, TypeScript, Portfolio, Full-Stack Developer, LangChain, RAG, AI Engineering`,
     type: 'website',
   })
 }
@@ -64,6 +64,7 @@ export default async function Home() {
   const recentPosts = await getRecentBlogPosts()
 
   // Generate structured data for the person
+  const allSkills = profile.skills.flatMap((category) => category.items)
   const personStructuredData = generatePersonStructuredData({
     name: profile.name,
     title: profile.title,
@@ -71,6 +72,8 @@ export default async function Home() {
     image: profile.profileImage,
     url: siteMetadata.siteUrl,
     sameAs: [siteMetadata.github, siteMetadata.linkedin, siteMetadata.x].filter(Boolean),
+    skills: allSkills.slice(0, 20), // Top 20 skills
+    worksFor: { name: 'Tekion', url: 'https://tekion.com' },
   })
 
   // Generate structured data for the website
@@ -120,7 +123,7 @@ export default async function Home() {
                 <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-primary/20 to-primary/0 blur-xl"></div>
                 <Image
                   src={profile.profileImage}
-                  alt={profile.name}
+                  alt={`${profile.name} - ${profile.title} specializing in React, TypeScript, and AI development`}
                   width={400}
                   height={400}
                   className="w-full max-w-md rounded-2xl object-cover shadow-xl"

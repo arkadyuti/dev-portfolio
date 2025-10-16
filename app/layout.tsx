@@ -11,6 +11,7 @@ import { Providers } from './providers'
 import { TooltipProvider } from '@/components/ui/tooltip'
 import { Toaster } from '@/components/ui/toaster'
 import { Toaster as Sonner } from '@/components/ui/sonner'
+import { GoogleAnalytics } from '@/components/analytics/GoogleAnalytics'
 
 // Load Inter font
 const inter = Inter({
@@ -31,15 +32,15 @@ const poppins = Poppins({
 export const metadata: Metadata = {
   metadataBase: new URL(siteMetadata.siteUrl),
   title: {
-    default: siteMetadata.title,
-    template: `%s | ${siteMetadata.title.split('|')[0].trim()}`,
+    default: `${siteMetadata.title} | Associate Architect & AI Developer | 9+ Years Experience`,
+    template: `%s | ${siteMetadata.title}`,
   },
   description: siteMetadata.description,
   keywords: siteMetadata.keywords,
   authors: [{ name: siteMetadata.author }],
   creator: siteMetadata.author,
   openGraph: {
-    title: siteMetadata.title,
+    title: `${siteMetadata.title} | Associate Architect & AI Developer | 9+ Years Experience`,
     description: siteMetadata.description,
     url: './',
     siteName: siteMetadata.title,
@@ -48,7 +49,7 @@ export const metadata: Metadata = {
         url: siteMetadata.socialBanner,
         width: 1200,
         height: 630,
-        alt: siteMetadata.title,
+        alt: `${siteMetadata.title} - Portfolio`,
       },
     ],
     locale: 'en_US',
@@ -72,7 +73,7 @@ export const metadata: Metadata = {
     },
   },
   twitter: {
-    title: siteMetadata.title,
+    title: `${siteMetadata.title} | Associate Architect & AI Developer | 9+ Years Experience`,
     card: 'summary_large_image',
     images: [siteMetadata.socialBanner],
     creator: '@arkadooti',
@@ -126,8 +127,43 @@ export default async function RootLayout({ children }: { children: React.ReactNo
           name="google-site-verification"
           content="Q_goUodclCKZr38sZFhH2UIJE3hEm3miydrju53Y1Pw"
         />
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify({
+              '@context': 'https://schema.org',
+              '@type': 'Person',
+              name: siteMetadata.author,
+              jobTitle: 'Associate Architect',
+              worksFor: {
+                '@type': 'Organization',
+                name: 'Tekion',
+              },
+              url: siteMetadata.siteUrl,
+              sameAs: [siteMetadata.github, siteMetadata.linkedin, siteMetadata.x],
+              description: siteMetadata.description,
+            }),
+          }}
+        />
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify({
+              '@context': 'https://schema.org',
+              '@type': 'WebSite',
+              name: siteMetadata.title,
+              url: siteMetadata.siteUrl,
+              description: siteMetadata.description,
+              author: {
+                '@type': 'Person',
+                name: siteMetadata.author,
+              },
+            }),
+          }}
+        />
       </head>
       <body>
+        <GoogleAnalytics gaId={siteMetadata.analytics.googleAnalyticsId} />
         <Providers>
           <ThemeProvider>
             <TooltipProvider>
