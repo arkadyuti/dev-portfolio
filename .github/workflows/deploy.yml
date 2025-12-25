@@ -11,6 +11,23 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      - name: Set up SSH
+        uses: shimataro/ssh-key-action@v2
+        with:
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          known_hosts: 'just-a-placeholder'
+
+      - name: Add remote host to known hosts
+        run: |
+          mkdir -p ~/.ssh
+          ssh-keyscan -H ${{ secrets.SSH_HOST }} >> ~/.ssh/known_hosts
+          chmod 600 ~/.ssh/known_hosts
+
+      - name: Verify SSH connection
+        run: |
+          echo "Testing SSH connection..."
+          ssh -o StrictHostKeyChecking=no -o ConnectTimeout=10 ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} "echo 'SSH connection successful' && mkdir -p ~/services/portfolio"
+
       - name: Create .env file
         run: |
           echo "Creating .env file with secrets..."
@@ -41,19 +58,6 @@ jobs:
       - name: Load Docker image
         run: docker load -i /tmp/portfolio-image.tar
 
-      - name: Set up SSH
-        uses: shimataro/ssh-key-action@v2
-        with:
-          key: ${{ secrets.SSH_PRIVATE_KEY }}
-          known_hosts: 'just-a-placeholder'
-
-      - name: Add remote host to known hosts
-        run: |
-          mkdir -p ~/.ssh
-          echo "Adding ${{ secrets.SSH_HOST }} to known hosts..."
-          ssh-keyscan -H ${{ secrets.SSH_HOST }} >> ~/.ssh/known_hosts
-          chmod 600 ~/.ssh/known_hosts
-
       - name: Compress Docker image
         run: |
           echo "Compressing Docker image..."
@@ -63,9 +67,9 @@ jobs:
       - name: Transfer Docker image to server
         run: |
           echo "Transferring Docker image to server..."
-          scp -o StrictHostKeyChecking=no portfolio-image.tar.gz ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}:/root/services/portfolio-image.tar.gz
-          scp -o StrictHostKeyChecking=no docker-compose.yml ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}:/root/services/portfolio/docker-compose.yml
-          scp -o StrictHostKeyChecking=no .env ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}:/root/services/portfolio/.env
+          scp -o StrictHostKeyChecking=no portfolio-image.tar.gz ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}:/home/arka/services/portfolio-image.tar.gz
+          scp -o StrictHostKeyChecking=no docker-compose.yml ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}:/home/arka/services/portfolio/docker-compose.yml
+          scp -o StrictHostKeyChecking=no .env ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}:/home/arka/services/portfolio/.env
 
       - name: Deploy to production
         run: |
@@ -73,65 +77,63 @@ jobs:
             # Force using bash instead of fish
             bash -c '
             # Navigate to the services directory
-            cd /root/services/
-          
-            # Create portfolio directory if it doesn not exist
+            cd /home/arka/services/
+
+            # Create portfolio directory if it does not exist
             mkdir -p portfolio
             cd portfolio
 
             # Stop the current container
             docker compose down || true
-            
+
             # Load the new Docker image
             echo "Loading Docker image..."
-            docker load < /root/services/portfolio-image.tar.gz
-            
+            gunzip -c /home/arka/services/portfolio-image.tar.gz | docker load
+
             # Remove the transferred image file
-            rm -f /root/services/portfolio-image.tar.gz
-          
+            rm -f /home/arka/services/portfolio-image.tar.gz
+
             # Start the container using the new image
             echo "Starting container..."
             docker compose up -d
-          
+
             # Wait for container to be fully running
             echo "Waiting for container to be ready..."
             attempt=1
             max_attempts=30
-          
+
             until [ $attempt -gt $max_attempts ] || docker container inspect portfolio --format="{{.State.Running}}" 2>/dev/null | grep -q "true"; do
               echo "Attempt $attempt/$max_attempts: Container not ready yet, waiting..."
               sleep 2
               attempt=$((attempt+1))
             done
-          
+
             if [ $attempt -gt $max_attempts ]; then
               echo "Container failed to start properly within time limit!"
               docker compose logs
               exit 1
             fi
-          
+
             # Further verification of application health
             echo "Verifying application health..."
             timeout=120
             start_time=$(date +%s)
             end_time=$((start_time + timeout))
             while [ $(date +%s) -lt $end_time ]; do
-              if curl -s http://localhost:3000/ > /dev/null; then
+              if curl -s http://localhost:3000/api/ping > /dev/null; then
                 echo "Application is responding!"
                 break
               fi
               echo "Waiting for application to respond..."
               sleep 10
             done
-          
-            if ! curl -s http://localhost:3000/ > /dev/null; then
+
+            if ! curl -s http://localhost:3000/api/ping > /dev/null; then
               echo "Application failed to respond within timeout!"
               docker compose logs
               exit 1
             fi
-          
-            # Clean up is already done above
-          
+
             # Verify deployment
             echo "Deployment successful! Container is running and application is responding."
             docker ps | grep portfolio
