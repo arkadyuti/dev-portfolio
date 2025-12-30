@@ -26,7 +26,7 @@ jobs:
       - name: Verify SSH connection
         run: |
           echo "Testing SSH connection..."
-          ssh -o StrictHostKeyChecking=no -o ConnectTimeout=10 ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} "echo 'SSH connection successful' && mkdir -p ~/services/portfolio"
+          ssh -o StrictHostKeyChecking=no -o ConnectTimeout=10 ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} "echo 'SSH connection successful' && mkdir -p ~/services/portfolio ~/services/docker-images"
 
       - name: Create .env file
         run: |
@@ -39,8 +39,8 @@ jobs:
           echo "MONGODB_URI=${{ secrets.MONGODB_URI }}" >> .env
           echo "JWT_ACCESS_SECRET=${{ secrets.JWT_ACCESS_SECRET }}" >> .env
           echo "JWT_REFRESH_SECRET=${{ secrets.JWT_REFRESH_SECRET }}" >> .env
-          echo "REDIS_HOST=${{ secrets.REDIS_HOST }}" >> .env
-          echo "REDIS_PORT=${{ secrets.REDIS_PORT }}" >> .env
+          echo "REDIS_HOST=redis-db" >> .env
+          echo "REDIS_PORT=6379" >> .env
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
@@ -67,7 +67,7 @@ jobs:
       - name: Transfer Docker image to server
         run: |
           echo "Transferring Docker image to server..."
-          scp -o StrictHostKeyChecking=no portfolio-image.tar.gz ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}:/home/arka/services/portfolio-image.tar.gz
+          scp -o StrictHostKeyChecking=no portfolio-image.tar.gz ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}:/home/arka/services/docker-images/portfolio-image.tar.gz
           scp -o StrictHostKeyChecking=no docker-compose.yml ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}:/home/arka/services/portfolio/docker-compose.yml
           scp -o StrictHostKeyChecking=no .env ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}:/home/arka/services/portfolio/.env
 
@@ -88,10 +88,7 @@ jobs:
 
             # Load the new Docker image
             echo "Loading Docker image..."
-            gunzip -c /home/arka/services/portfolio-image.tar.gz | docker load
-
-            # Remove the transferred image file
-            rm -f /home/arka/services/portfolio-image.tar.gz
+            gunzip -c /home/arka/services/docker-images/portfolio-image.tar.gz | docker load
 
             # Start the container using the new image
             echo "Starting container..."
