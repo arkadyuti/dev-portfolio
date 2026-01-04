@@ -117,7 +117,7 @@ jobs:
             start_time=$(date +%s)
             end_time=$((start_time + timeout))
             while [ $(date +%s) -lt $end_time ]; do
-              if curl -s http://localhost:3000/api/ping > /dev/null; then
+              if docker exec portfolio wget -q -O - --timeout=5 http://0.0.0.0:3000/api/ping > /dev/null 2>&1; then
                 echo "Application is responding!"
                 break
               fi
@@ -125,7 +125,7 @@ jobs:
               sleep 10
             done
 
-            if ! curl -s http://localhost:3000/api/ping > /dev/null; then
+            if ! docker exec portfolio wget -q -O - --timeout=5 http://0.0.0.0:3000/api/ping > /dev/null 2>&1; then
               echo "Application failed to respond within timeout!"
               docker compose logs
               exit 1

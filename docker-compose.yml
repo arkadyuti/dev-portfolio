@@ -13,7 +13,7 @@ services:
     env_file:
       - .env
     networks:
-      - services_default
+      - app-network
     healthcheck:
       test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://0.0.0.0:3000/api/ping"]
       interval: 30s
@@ -22,5 +22,5 @@ services:
       start_period: 40s
 
 networks:
-  services_default:
+  app-network:
     external: true
