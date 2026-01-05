@@ -58,6 +58,15 @@ jobs:
       - name: Load Docker image
         run: docker load -i /tmp/portfolio-image.tar
 
+      - name: Scan Docker image for vulnerabilities
+        uses: aquasecurity/trivy-action@0.30.0
+        with:
+          image-ref: 'portfolio:latest'
+          format: 'table'
+          exit-code: '1'
+          severity: 'CRITICAL,HIGH'
+          ignore-unfixed: true
+
       - name: Compress Docker image
         run: |
           echo "Compressing Docker image..."
