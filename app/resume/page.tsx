@@ -27,13 +27,14 @@ export default async function ResumePage() {
   return (
     <section className="py-8 md:py-12">
       <div className="container-custom">
+        <span className="mono-label">// resume.pdf</span>
         <h1 className="section-heading text-center">Resume</h1>
 
         {resume ? (
           <ResumeViewer fileUrl={resume.fileUrl} uploadedAt={resume.uploadedAt} />
         ) : (
           <div className="py-20 text-center">
-            <p className="text-lg text-muted-foreground">Resume not yet available.</p>
+            <p className="font-mono text-sm text-muted-foreground">Resume not yet available.</p>
           </div>
         )}
       </div>

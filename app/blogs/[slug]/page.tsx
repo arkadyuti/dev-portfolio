@@ -13,6 +13,7 @@ import { genPageMetadata, generateArticleStructuredData } from '../../seo'
 import Script from 'next/script'
 import logger from '@/lib/logger'
 import connectToDatabase from '@/lib/mongodb'
+import { ScrollReveal } from '@/components/fx/scroll-reveal'
 import '@blocknote/core/fonts/inter.css'
 import '@blocknote/mantine/style.css'
 
@@ -114,65 +115,78 @@ export default async function BlogDetail({ params }: { params: Promise<{ slug: s
       <article className="py-12">
         <div className="container-custom max-w-4xl">
           {/* Back to blog */}
-          <div className="mb-8">
-            <Button variant="ghost" asChild className="pl-0 transition-all duration-200 hover:pl-2">
-              <Link href="/blogs" className="flex items-center gap-2">
-                <ArrowLeft className="h-4 w-4" />
-                Back to all posts
-              </Link>
-            </Button>
-          </div>
+          <ScrollReveal direction="left">
+            <div className="mb-8">
+              <Button variant="ghost" asChild className="pl-0 font-mono text-xs transition-all duration-200 hover:pl-2">
+                <Link href="/blogs" className="flex items-center gap-2">
+                  <ArrowLeft className="h-4 w-4" />
+                  Back to all posts
+                </Link>
+              </Button>
+            </div>
+          </ScrollReveal>
 
           {/* Header */}
-          <header className="mb-10">
-            <h1 className="mb-6 text-4xl font-bold md:text-5xl">{post.title}</h1>
+          <ScrollReveal direction="up">
+            <header className="mb-10">
+              <h1 className="mb-6 text-4xl font-bold md:text-5xl">{post.title}</h1>
 
-            <div className="mb-8 flex flex-wrap items-center gap-x-6 gap-y-2 text-muted-foreground">
-              <div className="flex items-center gap-2">
-                <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10">
-                  {post.author.charAt(0)}
+              <div className="mb-8 flex flex-wrap items-center gap-x-6 gap-y-2 text-muted-foreground">
+                <div className="flex items-center gap-2">
+                  <div className="flex h-8 w-8 items-center justify-center rounded-full border border-border/40 bg-primary/10 font-mono text-xs">
+                    {post.author.charAt(0)}
+                  </div>
+                  <span>{post.author}</span>
                 </div>
-                <span>{post.author}</span>
+
+                <time dateTime={post.publishedAt.toString()} className="font-mono text-[10px]">
+                  {new Date(post.publishedAt).toLocaleDateString('en-US', {
+                    year: 'numeric',
+                    month: 'long',
+                    day: 'numeric',
+                  })}
+                </time>
+
+                <span className="flex items-center font-mono text-[10px]">
+                  <span className="mx-2 inline-block h-1 w-1 rounded-full bg-muted-foreground md:hidden"></span>
+                  <span>{readingTime} min read</span>
+                </span>
+
+                <ViewTracker blogId={post.id} initialViews={post.views || 0} />
               </div>
 
-              <time dateTime={post.publishedAt.toString()}>
-                {new Date(post.publishedAt).toLocaleDateString('en-US', {
-                  year: 'numeric',
-                  month: 'long',
-                  day: 'numeric',
-                })}
-              </time>
-
-              <span className="flex items-center">
-                <span className="mx-2 inline-block h-1 w-1 rounded-full bg-muted-foreground md:hidden"></span>
-                <span>{readingTime} min read</span>
-              </span>
-
-              <ViewTracker blogId={post.id} initialViews={post.views || 0} />
-            </div>
-
-            <div className="mb-8 flex flex-wrap gap-2">
-              {post.tags.map((tag) => (
-                <Link key={tag.id} href={`/blogs?tag=${tag.id}`}>
-                  <Badge variant="outline" className="hover:bg-secondary">
-                    {tag.name}
-                  </Badge>
-                </Link>
-              ))}
-            </div>
-          </header>
+              <div className="mb-8 flex flex-wrap gap-2">
+                {post.tags.map((tag) => (
+                  <Link key={tag.id} href={`/blogs?tag=${tag.id}`}>
+                    <Badge variant="outline" className="border-border/40 font-mono text-[10px] hover:bg-secondary">
+                      {tag.name}
+                    </Badge>
+                  </Link>
+                ))}
+              </div>
+            </header>
+          </ScrollReveal>
 
           {/* Cover Image */}
-          <div className="mb-10 overflow-hidden rounded-xl">
-            <Image
-              width={848}
-              height={560}
-              src={post.coverImage}
-              alt={post.title}
-              className="h-auto w-full object-cover"
-              priority
-            />
-          </div>
+          <ScrollReveal direction="up" delay={100}>
+            <div className="terminal-block mb-10">
+              <div className="terminal-header">
+                <div className="terminal-dot bg-red-500"></div>
+                <div className="terminal-dot bg-yellow-500"></div>
+                <div className="terminal-dot bg-green-500"></div>
+              </div>
+              <div className="overflow-hidden">
+                <Image
+                  width={848}
+                  height={560}
+                  src={post.coverImage}
+                  alt={post.title}
+                  className="h-auto w-full object-cover"
+                  priority
+                />
+              </div>
+            </div>
+          </ScrollReveal>
 
           {/* Content */}
           <div className="prose prose-lg max-w-none">
@@ -180,17 +194,17 @@ export default async function BlogDetail({ params }: { params: Promise<{ slug: s
           </div>
 
           {/* Share buttons */}
-          <div className="mt-10 border-t pt-4">
+          <div className="mt-10 border-t border-border/30 pt-4">
             <ShareButtons post={post} />
           </div>
 
           {/* Tags */}
-          <div className="mt-12 border-t pt-8">
+          <div className="mt-12 border-t border-border/30 pt-8">
             <h3 className="mb-4 text-lg font-semibold">Tags</h3>
             <div className="flex flex-wrap gap-2">
               {post.tags.map((tag) => (
                 <Link key={tag.id} href={`/blogs?tag=${tag.name}`}>
-                  <Badge variant="outline" className="hover:bg-secondary">
+                  <Badge variant="outline" className="border-border/40 font-mono text-[10px] hover:bg-secondary">
                     {tag.name}
                   </Badge>
                 </Link>
@@ -202,40 +216,43 @@ export default async function BlogDetail({ params }: { params: Promise<{ slug: s
 
       {/* Related posts */}
       {relatedPosts.length > 0 && (
-        <section className="bg-secondary/50 py-12">
+        <section className="border-t border-border/30 py-12">
           <div className="container-custom max-w-4xl">
-            <h2 className="mb-8 text-2xl font-bold">Related Posts</h2>
+            <ScrollReveal direction="up">
+              <h2 className="mb-8 text-2xl font-bold">Related Posts</h2>
+            </ScrollReveal>
 
             <div className="grid grid-cols-1 gap-8 md:grid-cols-2">
-              {relatedPosts.map((relatedPost) => (
-                <Link
-                  key={relatedPost.id}
-                  href={`/blogs/${relatedPost.slug}`}
-                  className="blog-card group block"
-                >
-                  <div className="aspect-video overflow-hidden">
-                    <Image
-                      width={406}
-                      height={228}
-                      src={relatedPost.coverImage}
-                      alt={relatedPost.title}
-                      className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
-                    />
-                  </div>
-                  <div className="p-6">
-                    <h3 className="mb-2 text-xl font-bold transition-colors group-hover:text-primary">
-                      {relatedPost.title}
-                    </h3>
-                    <p className="mb-4 line-clamp-2 text-muted-foreground">{relatedPost.excerpt}</p>
-                    <div className="flex flex-wrap gap-2">
-                      {relatedPost.tags.slice(0, 2).map((tag) => (
-                        <Badge key={tag.id} variant="outline">
-                          {tag.name}
-                        </Badge>
-                      ))}
+              {relatedPosts.map((relatedPost, index) => (
+                <ScrollReveal key={relatedPost.id} direction="up" delay={index * 100}>
+                  <Link
+                    href={`/blogs/${relatedPost.slug}`}
+                    className="blog-card group block"
+                  >
+                    <div className="aspect-video overflow-hidden">
+                      <Image
+                        width={406}
+                        height={228}
+                        src={relatedPost.coverImage}
+                        alt={relatedPost.title}
+                        className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+                      />
                     </div>
-                  </div>
-                </Link>
+                    <div className="p-6">
+                      <h3 className="mb-2 text-xl font-bold transition-colors group-hover:text-primary">
+                        {relatedPost.title}
+                      </h3>
+                      <p className="mb-4 line-clamp-2 text-muted-foreground">{relatedPost.excerpt}</p>
+                      <div className="flex flex-wrap gap-2">
+                        {relatedPost.tags.slice(0, 2).map((tag) => (
+                          <Badge key={tag.id} variant="outline" className="border-border/40 font-mono text-[10px]">
+                            {tag.name}
+                          </Badge>
+                        ))}
+                      </div>
+                    </div>
+                  </Link>
+                </ScrollReveal>
               ))}
             </div>
           </div>

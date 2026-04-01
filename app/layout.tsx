@@ -1,4 +1,4 @@
-import { Inter, Poppins } from 'next/font/google'
+import { Inter, Poppins, JetBrains_Mono } from 'next/font/google'
 import siteMetadata from '@/data/siteMetadata'
 import { ThemeProvider } from '@/components/theme-provider'
 import { Metadata } from 'next'
@@ -12,6 +12,7 @@ import { TooltipProvider } from '@/components/ui/tooltip'
 import { Toaster } from '@/components/ui/toaster'
 import { Toaster as Sonner } from '@/components/ui/sonner'
 import { GoogleAnalytics } from '@/components/analytics/GoogleAnalytics'
+import { CursorGlow } from '@/components/fx/cursor-glow'
 
 // Load Inter font
 const inter = Inter({
@@ -27,6 +28,14 @@ const poppins = Poppins({
   display: 'swap',
   variable: '--font-poppins',
   weight: ['400', '500', '600', '700'],
+})
+
+// Load JetBrains Mono for terminal aesthetics
+const jetbrainsMono = JetBrains_Mono({
+  subsets: ['latin'],
+  display: 'swap',
+  variable: '--font-jetbrains',
+  weight: ['400', '500', '700'],
 })
 
 export const metadata: Metadata = {
@@ -98,7 +107,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   return (
     <html
       lang={siteMetadata.language}
-      className={`${inter.variable} ${poppins.variable} scroll-smooth`}
+      className={`${inter.variable} ${poppins.variable} ${jetbrainsMono.variable} scroll-smooth`}
       suppressHydrationWarning
     >
       <head>
@@ -162,13 +171,14 @@ export default async function RootLayout({ children }: { children: React.ReactNo
           }}
         />
       </head>
-      <body>
+      <body className="noise-texture">
         <GoogleAnalytics gaId={siteMetadata.analytics.googleAnalyticsId} />
         <Providers>
           <ThemeProvider>
             <TooltipProvider>
               <Toaster />
               <Sonner />
+              <CursorGlow />
               <div className="flex min-h-screen flex-col">
                 <Header />
                 <main className="flex-grow pb-16 md:pb-0">{children}</main>

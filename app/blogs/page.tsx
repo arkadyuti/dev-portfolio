@@ -14,6 +14,7 @@ import Link from '@/components/ui/Link'
 import BlogModels, { transformToBlogs } from 'models/blog'
 import Image from 'next/image'
 import connectToDatabase from '@/lib/mongodb'
+import { ScrollReveal } from '@/components/fx/scroll-reveal'
 
 // Force dynamic rendering
 export const dynamic = 'force-dynamic'
@@ -105,53 +106,60 @@ export default async function BlogPage({
   return (
     <section className="py-12 md:py-20">
       <div className="container-custom">
-        <h1 className="section-heading mb-12 text-center">Blog Posts</h1>
+        <ScrollReveal direction="up">
+          <div className="mb-12 text-center">
+            <span className="mono-label mb-2 block text-primary">// blog.posts</span>
+            <h1 className="section-heading">Blog Posts</h1>
+          </div>
+        </ScrollReveal>
 
         {/* Search and filter section */}
-        <div className="mb-10 space-y-6">
-          <form action="/blogs" method="GET" className="flex gap-2">
-            <Input
-              placeholder="Search posts..."
-              name="q"
-              defaultValue={searchQuery}
-              className="flex-1"
-            />
-            <Button type="submit">
-              <Search className="mr-2 h-4 w-4" />
-              Search
-            </Button>
-            {searchQuery && (
-              <Button variant="ghost">
-                <Link href="/blogs">Clear</Link>
+        <ScrollReveal direction="up" delay={100}>
+          <div className="mb-10 space-y-6">
+            <form action="/blogs" method="GET" className="flex gap-2">
+              <Input
+                placeholder="Search posts..."
+                name="q"
+                defaultValue={searchQuery}
+                className="flex-1 bg-muted/30 border-border/50 backdrop-blur-sm font-mono text-xs"
+              />
+              <Button type="submit" className="font-mono text-xs">
+                <Search className="mr-2 h-4 w-4" />
+                Search
               </Button>
-            )}
-          </form>
+              {searchQuery && (
+                <Button variant="ghost" className="font-mono text-xs">
+                  <Link href="/blogs">Clear</Link>
+                </Button>
+              )}
+            </form>
 
-          <div className="flex flex-wrap gap-2">
-            {tags.map((tag) => (
-              <Link
-                key={tag.id}
-                href={`/blogs${selectedTagId === tag.name ? '' : `?tag=${tag.name}`}${searchQuery ? `&q=${searchQuery}` : ''}`}
-                className="transition-colors"
-              >
-                <Badge
-                  variant={selectedTagId === tag.name ? 'default' : 'outline'}
-                  className={
-                    selectedTagId === tag.name
-                      ? 'hover:bg-primary/90'
-                      : 'hover:bg-primary/10 hover:text-primary'
-                  }
+            <div className="flex flex-wrap gap-2">
+              {tags.map((tag) => (
+                <Link
+                  key={tag.id}
+                  href={`/blogs${selectedTagId === tag.name ? '' : `?tag=${tag.name}`}${searchQuery ? `&q=${searchQuery}` : ''}`}
+                  className="transition-colors"
                 >
-                  {tag.name}
-                </Badge>
-              </Link>
-            ))}
+                  <Badge
+                    variant={selectedTagId === tag.name ? 'default' : 'outline'}
+                    className={
+                      selectedTagId === tag.name
+                        ? 'font-mono text-[10px] hover:bg-primary/90'
+                        : 'border-border/40 font-mono text-[10px] hover:bg-primary/10 hover:text-primary'
+                    }
+                  >
+                    {tag.name}
+                  </Badge>
+                </Link>
+              ))}
+            </div>
           </div>
-        </div>
+        </ScrollReveal>
 
         {/* Filter info */}
         {(selectedTagId || searchQuery) && (
-          <div className="mb-6 rounded-md bg-muted p-3 text-sm">
+          <div className="mb-6 rounded-md border border-border/40 bg-card/50 p-3 font-mono text-xs">
             <p>
               {pagination.total} post(s) found
               {selectedTagId && ` with tag: ${selectedTagId}`}
@@ -163,51 +171,53 @@ export default async function BlogPage({
         {/* Blog posts grid */}
         {blogs.length > 0 ? (
           <div className="mb-10 grid grid-cols-1 gap-8 md:grid-cols-2 lg:grid-cols-3">
-            {blogs.map((post) => (
-              <Link key={post.id} href={`/blogs/${post.slug}`} className="blog-card group block">
-                <div className="aspect-video overflow-hidden">
-                  <Image
-                    src={post.coverImage}
-                    alt={post.title}
-                    width={400}
-                    height={225}
-                    className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
-                    priority
-                  />
-                </div>
-                <div className="p-6">
-                  <div className="mb-2 flex items-center justify-between text-sm text-muted-foreground">
-                    <span>
-                      {new Date(post.publishedAt).toLocaleDateString('en-US', {
-                        year: 'numeric',
-                        month: 'long',
-                        day: 'numeric',
-                      })}
-                    </span>
-                    <span className="flex items-center gap-1">
-                      <Eye className="h-3 w-3" />
-                      {post.views || 0}
-                    </span>
+            {blogs.map((post, index) => (
+              <ScrollReveal key={post.id} direction="up" delay={index * 80}>
+                <Link href={`/blogs/${post.slug}`} className="blog-card group block">
+                  <div className="aspect-video overflow-hidden">
+                    <Image
+                      src={post.coverImage}
+                      alt={post.title}
+                      width={400}
+                      height={225}
+                      className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+                      priority
+                    />
                   </div>
-                  <h2 className="mb-2 text-xl font-bold transition-colors group-hover:text-primary">
-                    {post.title}
-                  </h2>
-                  <p className="mb-4 line-clamp-3 text-muted-foreground">{post.excerpt}</p>
-                  <div className="flex flex-wrap gap-2">
-                    {post.tags.map((tag) => (
-                      <Badge key={tag.id} variant="outline">
-                        {tag.name}
-                      </Badge>
-                    ))}
+                  <div className="p-6">
+                    <div className="mb-2 flex items-center justify-between font-mono text-[10px] text-muted-foreground">
+                      <span>
+                        {new Date(post.publishedAt).toLocaleDateString('en-US', {
+                          year: 'numeric',
+                          month: 'long',
+                          day: 'numeric',
+                        })}
+                      </span>
+                      <span className="flex items-center gap-1">
+                        <Eye className="h-3 w-3" />
+                        {post.views || 0}
+                      </span>
+                    </div>
+                    <h2 className="mb-2 text-xl font-bold transition-colors group-hover:text-primary">
+                      {post.title}
+                    </h2>
+                    <p className="mb-4 line-clamp-3 text-muted-foreground">{post.excerpt}</p>
+                    <div className="flex flex-wrap gap-2">
+                      {post.tags.map((tag) => (
+                        <Badge key={tag.id} variant="outline" className="border-border/40 font-mono text-[10px]">
+                          {tag.name}
+                        </Badge>
+                      ))}
+                    </div>
                   </div>
-                </div>
-              </Link>
+                </Link>
+              </ScrollReveal>
             ))}
           </div>
         ) : (
           <div className="py-10 text-center">
             <p className="text-xl text-muted-foreground">No posts found matching your criteria.</p>
-            <Button variant="outline" className="mt-4">
+            <Button variant="outline" className="mt-4 font-mono text-xs">
               <Link href="/blogs">Reset filters</Link>
             </Button>
           </div>
@@ -221,7 +231,7 @@ export default async function BlogPage({
                 <PaginationItem>
                   <PaginationLink
                     href={`/blogs?page=${currentPage - 1}${selectedTagId ? `&tag=${selectedTagId}` : ''}${searchQuery ? `&q=${searchQuery}` : ''}`}
-                    className="cursor-pointer"
+                    className="cursor-pointer font-mono text-xs"
                   >
                     Previous
                   </PaginationLink>
@@ -233,7 +243,7 @@ export default async function BlogPage({
                   <PaginationLink
                     href={`/blogs?page=${page}${selectedTagId ? `&tag=${selectedTagId}` : ''}${searchQuery ? `&q=${searchQuery}` : ''}`}
                     isActive={page === currentPage}
-                    className="cursor-pointer"
+                    className="cursor-pointer font-mono text-xs"
                   >
                     {page}
                   </PaginationLink>
@@ -244,7 +254,7 @@ export default async function BlogPage({
                 <PaginationItem>
                   <PaginationLink
                     href={`/blogs?page=${currentPage + 1}${selectedTagId ? `&tag=${selectedTagId}` : ''}${searchQuery ? `&q=${searchQuery}` : ''}`}
-                    className="cursor-pointer"
+                    className="cursor-pointer font-mono text-xs"
                   >
                     Next
                   </PaginationLink>

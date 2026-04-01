@@ -83,42 +83,58 @@ export function Footer() {
   }
 
   return (
-    <footer className="border-t bg-background">
+    <footer className="border-t border-border/40 bg-background/50 backdrop-blur-sm">
       <div className="container-custom py-12">
-        <div className="grid grid-cols-1 gap-8 md:grid-cols-3">
+        <div className="grid grid-cols-1 gap-10 md:grid-cols-3">
+          {/* Brand */}
           <div className="space-y-4">
-            <Link href="/" className="font-heading text-2xl font-bold">
-              <span className="text-primary">Dev</span>Portfolio
+            <Link
+              href="/"
+              className="inline-flex items-center gap-1.5 font-mono text-sm font-medium"
+            >
+              <span className="text-primary">~</span>
+              <span className="text-foreground">/dev</span>
+              <span className="text-muted-foreground">/</span>
+              <span className="text-primary font-bold">portfolio</span>
             </Link>
-            <p className="text-muted-foreground">
+            <p className="text-sm text-muted-foreground">
               Showcasing my journey and expertise as a frontend architect.
             </p>
           </div>
 
+          {/* Links */}
           <div className="space-y-4">
-            <h3 className="font-heading text-lg font-semibold">Links</h3>
+            <h3 className="font-mono text-xs font-medium uppercase tracking-widest text-muted-foreground">
+              Links
+            </h3>
             <nav className="flex flex-col space-y-2">
-              <Link href="/" className="transition-colors hover:text-primary">
-                Home
-              </Link>
-              <Link href="/blogs" className="transition-colors hover:text-primary">
-                Blog
-              </Link>
-              <Link href="/about" className="transition-colors hover:text-primary">
-                About
-              </Link>
-              <Link href="/projects" className="transition-colors hover:text-primary">
-                Projects
-              </Link>
-              <Link href="/resume" className="transition-colors hover:text-primary">
-                Resume
-              </Link>
+              {[
+                { name: 'home', href: '/' },
+                { name: 'blog', href: '/blogs' },
+                { name: 'about', href: '/about' },
+                { name: 'projects', href: '/projects' },
+                { name: 'resume', href: '/resume' },
+              ].map((link) => (
+                <Link
+                  key={link.name}
+                  href={link.href}
+                  className="group inline-flex items-center gap-1.5 font-mono text-sm text-muted-foreground transition-colors hover:text-primary"
+                >
+                  <span className="text-border transition-colors group-hover:text-primary">
+                    {'>'}
+                  </span>
+                  {link.name}
+                </Link>
+              ))}
             </nav>
           </div>
 
+          {/* Newsletter */}
           <div className="space-y-4">
-            <h3 className="font-heading text-lg font-semibold">Newsletter</h3>
-            <form onSubmit={handleNewsletterSubmit} className="space-y-2">
+            <h3 className="font-mono text-xs font-medium uppercase tracking-widest text-muted-foreground">
+              Newsletter
+            </h3>
+            <form onSubmit={handleNewsletterSubmit} className="space-y-3">
               <p className="text-sm text-muted-foreground">
                 Stay updated with my latest articles and projects.
               </p>
@@ -128,38 +144,46 @@ export function Footer() {
                   name="email"
                   placeholder="your@email.com"
                   required
-                  className="flex-1"
+                  className="flex-1 border-border/50 bg-muted/30 font-mono text-sm backdrop-blur-sm focus:border-primary/50"
                   disabled={isLoading}
                 />
-                <Button type="submit" disabled={isLoading}>
-                  {isLoading ? 'Subscribing...' : 'Subscribe'}
+                <Button
+                  type="submit"
+                  disabled={isLoading}
+                  size="sm"
+                  className="font-mono text-xs"
+                >
+                  {isLoading ? '...' : 'subscribe'}
                 </Button>
               </div>
             </form>
           </div>
         </div>
 
-        <div className="mt-12 flex flex-col items-center justify-between border-t pt-8 md:flex-row">
+        {/* Bottom bar */}
+        <div className="mt-10 flex flex-col items-center justify-between gap-4 border-t border-border/30 pt-6 md:flex-row">
           <div className="flex flex-col items-center gap-1 md:items-start">
-            <p className="text-sm text-muted-foreground">Built with passion for open source</p>
+            <p className="font-mono text-xs text-muted-foreground/70">
+              Built with passion for open source
+            </p>
             {buildInfo && (
-              <p className="text-xs text-muted-foreground/70">
-                v{buildInfo.version} • Build #{buildInfo.buildNumber}
+              <p className="font-mono text-[10px] text-muted-foreground/40">
+                v{buildInfo.version} / build #{buildInfo.buildNumber}
               </p>
             )}
           </div>
 
-          <div className="mt-4 flex items-center gap-4 md:mt-0">
+          <div className="flex items-center gap-3">
             {socialLinks.map((link) => (
               <a
                 key={link.name}
                 href={link.href}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="transition-colors hover:text-primary"
+                className="rounded-md p-2 text-muted-foreground/60 transition-all hover:text-primary"
                 aria-label={link.name}
               >
-                <link.icon className="h-5 w-5" />
+                <link.icon className="h-4 w-4" />
               </a>
             ))}
           </div>

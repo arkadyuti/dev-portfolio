@@ -52,7 +52,7 @@ export function BottomNav() {
   return (
     <nav
       className={cn(
-        'fixed bottom-0 left-0 right-0 z-50 border-t bg-background/95 backdrop-blur transition-transform duration-300 md:hidden',
+        'fixed bottom-0 left-0 right-0 z-50 border-t border-border/30 bg-background/90 backdrop-blur-xl transition-transform duration-300 md:hidden',
         isVisible ? 'translate-y-0' : 'translate-y-full'
       )}
     >
@@ -64,12 +64,15 @@ export function BottomNav() {
               key={item.name}
               href={item.href}
               className={cn(
-                'flex flex-1 flex-col items-center gap-1 py-3 text-xs font-medium transition-colors',
+                'flex flex-1 flex-col items-center gap-0.5 py-2.5 font-mono text-[10px] font-medium transition-colors',
                 active ? 'text-primary' : 'text-muted-foreground hover:text-foreground'
               )}
             >
-              <item.icon className={cn('h-5 w-5', active && 'fill-current')} />
-              <span>{item.name}</span>
+              <item.icon className={cn('h-4 w-4', active && 'fill-current')} />
+              <span>{item.name.toLowerCase()}</span>
+              {active && (
+                <span className="absolute bottom-0 h-px w-8 bg-primary" />
+              )}
             </Link>
           )
         })}
