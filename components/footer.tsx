@@ -110,6 +110,9 @@ export function Footer() {
               <Link href="/projects" className="transition-colors hover:text-primary">
                 Projects
               </Link>
+              <Link href="/resume" className="transition-colors hover:text-primary">
+                Resume
+              </Link>
             </nav>
           </div>
 

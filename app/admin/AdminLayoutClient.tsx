@@ -21,6 +21,8 @@ export default function AdminLayoutClient({ children, user }: AdminLayoutClientP
   const isActive = () => {
     if (pathname.includes('/admin/projects')) {
       return 'projects'
+    } else if (pathname.includes('/admin/resume')) {
+      return 'resume'
     } else if (pathname.includes('/admin/blogs')) {
       return 'blogs'
     } else {
@@ -64,12 +66,15 @@ export default function AdminLayoutClient({ children, user }: AdminLayoutClientP
 
       <div className="container py-8">
         <Tabs value={isActive()} className="mb-8">
-          <TabsList className="grid w-full max-w-md grid-cols-2">
+          <TabsList className="grid w-full max-w-md grid-cols-3">
             <TabsTrigger value="blogs" asChild>
               <Link href="/admin/blogs">Blogs</Link>
             </TabsTrigger>
             <TabsTrigger value="projects" asChild>
               <Link href="/admin/projects">Projects</Link>
+            </TabsTrigger>
+            <TabsTrigger value="resume" asChild>
+              <Link href="/admin/resume">Resume</Link>
             </TabsTrigger>
           </TabsList>
         </Tabs>

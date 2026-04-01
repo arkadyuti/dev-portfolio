@@ -12,7 +12,7 @@ const ContentSecurityPolicy = `
   media-src *.s3.amazonaws.com;
   connect-src *;
   font-src 'self';
-  frame-src
+  frame-src 'self' https://minio-api.3027622.siliconpin.com http://minio-api.3027622.siliconpin.com https://docs.google.com;
 `
 
 const securityHeaders = [

@@ -1,4 +1,4 @@
-import { Home, FileText, User, Briefcase, Search, LucideIcon } from 'lucide-react'
+import { Home, FileText, User, Briefcase, Search, ScrollText, LucideIcon } from 'lucide-react'
 
 export interface NavItem {
   name: string
@@ -10,6 +10,7 @@ export const mainNavItems: NavItem[] = [
   { name: 'Home', href: '/', icon: Home },
   { name: 'Blog', href: '/blogs', icon: FileText },
   { name: 'Projects', href: '/projects', icon: Briefcase },
+  { name: 'Resume', href: '/resume', icon: ScrollText },
   { name: 'About', href: '/about', icon: User },
 ]
 
