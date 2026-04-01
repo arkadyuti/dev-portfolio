@@ -24,36 +24,27 @@ export interface Profile {
 export const profile: Profile = {
   name: 'Arkadyuti Sarkar',
   title: 'Associate Architect @ Tekion',
-  bio: 'Associate Architect at Tekion with 9+ years building AI-powered developer workflows, enterprise CI/CD systems, and IoT platforms. Specializing in LangChain/LangGraph frameworks, RAG implementations, and Model Context Protocol (MCP) while scaling engineering teams and solutions across 250+ developers.',
+  bio: 'Associate Architect at Tekion with 9+ years across AI agent systems, platform infrastructure, and distributed architectures. Currently building multi-agent pipelines with Agno and LangGraph over a RAG layer with vector search and graph-based code analysis, running on Azure AKS with ArgoCD-driven GitOps. Previously shipped enterprise CI/CD for 250+ developers and IoT platforms handling millions of MQTT messages.',
   longBio: `
 # About Me
 
-Associate Architect at Tekion, deeply passionate about transforming developer workflows through AI. Currently building production AI systems with LangChain/LangGraph, implementing RAG pipelines with Vector Databases, and architecting intelligent agents using Model Context Protocol (MCP). My work focuses on creating AI solutions that understand code context, development patterns, and deliver measurable impact.
+Associate Architect at Tekion, focused on AI agent systems and platform infrastructure. I build multi-agent pipelines using Agno and LangGraph that sit on top of a RAG layer — vector embeddings for semantic search and graph-based code traversal, indexing thousands of repositories and internal docs. The agents handle everything from Semgrep-based vulnerability triage to OpenAPI compliance scoring, with MCP integrations tying it all together.
 
-My technical journey has been shaped by a simple belief: good architecture makes hard problems feel easy. Whether it's designing microservices that scale, optimizing Docker builds, or implementing MQTT for real-time IoT communication, I focus on creating solutions that developers actually want to use.
+## Current Focus
 
-## My Approach
+On the AI side: LangGraph-based agent orchestration, CopilotKit runtimes powering an embeddable chat widget (Shadow DOM, multi-agent routing), and observability through Langfuse for per-user LLM tracing and OpenTelemetry for cross-service audit events.
 
-I've worked across the full stack - from React and TypeScript on the frontend to Golang & Node.js on the backend. But what really excites me now is the AI infrastructure layer: LangChain orchestration, RAG implementations, Vector Database optimization, and production observability with LangFuse. There's something deeply satisfying about watching AI agents handle complex workflows gracefully while maintaining reliability and performance.
+On the platform side: OAuth 2.0 flows through APISIX Edge Gateway with session auth, PKCE, and silent refresh. RBAC via CASL with role hierarchy enforcement and audit logging. Infrastructure on Azure AKS with ArgoCD GitOps, Jenkins CI/CD with rollout verification and per-service deploy locking, MFE pipelines with CDN-based build promotion. Prometheus and Grafana for monitoring with dedicated vector DB and graph DB node pools.
 
-Recent focus areas include building context-aware AI agents with LangGraph, implementing production-grade RAG systems, leveraging Vector Databases for semantic search, and finding the right balance between automation and human judgment in AI-powered development tools.
+## Earlier Work
 
-## Professional Journey
+Led frontend CI/CD for 250+ developers — custom Jest-based testing library, 50% build time reduction with multi-stage Docker, 4x cost savings through build-once promote-everywhere across six environments. Built a theming framework using CDN-served JSON tokens and Module Federation, removing the need for per-tenant codebases.
 
-Over 9+ years, I've scaled teams from 3 to 35+ engineers while architecting solutions adopted by 250+ developers organization-wide. From building IoT platforms deployed across General Motors dealerships to achieving 50% build time reduction through Docker optimization, I've consistently focused on making engineering more enjoyable and efficient.
+Before that, designed a distributed IoT platform for connected displays — RFID, OBD telemetry, real-time alerts on AWS IoT, MQTT, and SQS handling millions of messages. Scaled the team from 3 to 35+ engineers through the full product lifecycle.
 
-Key achievements include:
-- Architecting production AI systems with LangChain/LangGraph and RAG pipelines
-- Core contributor to AI workflow framework using Model Context Protocol (MCP)
-- Reduced OEM deployment cycles from 6+ months to weeks through platform engineering
-- Built Connected Displays IoT solution handling millions of MQTT requests
-- Achieved 4x cost reduction through build-once, promote-everywhere CI/CD strategy
+## Beyond Code
 
-## Beyond Coding
-
-I believe the best code is the code you don't have to write, and the best systems are the ones that feel invisible to their users. Always interested in discussions about AI agents, RAG architectures, system design, developer tooling, or how we can make engineering more enjoyable with intelligent automation.
-
-Outside of work, I enjoy gaming on my PC or PS5—it's my way of relaxing and staying inspired by great user experiences. Feel free to reach out!
+When I'm not building, I'm usually gaming on my PC or PS5. Always up for conversations about agent architectures, distributed systems, or platform engineering.
   `,
   profileImage: 'https://minio-api.3027622.siliconpin.com/portfolio/arkadyuti-sarkar.jpg',
   socialLinks: {
@@ -64,86 +55,74 @@ Outside of work, I enjoy gaming on my PC or PS5—it's my way of relaxing and st
   },
   skills: [
     {
-      category: 'AI & Emerging Tech',
+      category: 'AI & Protocols',
       items: [
-        'LangChain/LangGraph',
-        'LangFuse',
-        'Model Context Protocol (MCP)',
-        'RAG (Retrieval-Augmented Generation)',
-        'Vector Databases',
-        'Prompt Engineering',
+        'MCP',
+        'Agno',
+        'LangGraph',
+        'CopilotKit',
+        'RAG',
+        'Semantic Search',
+        'Vector Embeddings',
+        'OpenTelemetry',
+        'Langfuse',
+        'Flowise',
       ],
     },
     {
-      category: 'Frontend Development',
+      category: 'Architecture',
       items: [
-        'React.js (9+ years)',
-        'Next.js',
-        'TypeScript',
-        'Redux',
-        'Tailwind CSS',
-        'HTML5',
-        'CSS3',
-        'JavaScript (ES6+)',
-        'Webpack',
+        'System Design',
+        'Distributed Systems',
+        'Microservices',
+        'Event-Driven Architecture',
+        'API Design',
+        'Design Patterns',
       ],
     },
     {
-      category: 'Backend Development',
+      category: 'Languages',
+      items: ['JavaScript', 'TypeScript', 'Golang', 'Python'],
+    },
+    {
+      category: 'Frontend',
+      items: ['React', 'Next.js', 'Module Federation', 'Redux', 'Tailwind CSS'],
+    },
+    {
+      category: 'Backend & Database',
       items: [
-        'Golang',
-        'Node.js (8+ years)',
-        'RESTful APIs',
-        'Microservices Architecture',
-        'Python',
-        'PHP',
+        'Node.js',
+        'NestJS',
+        'Express',
+        'PostgreSQL',
+        'MongoDB',
+        'Qdrant',
+        'Neo4j',
+        'Redis',
+        'Prisma',
+        'MQTT',
       ],
     },
     {
       category: 'Cloud & DevOps',
       items: [
-        'AWS (EC2, S3, Lambda, IoT Core)',
+        'Azure AKS',
+        'AWS',
+        'Kubernetes',
+        'ArgoCD',
+        'APISIX',
         'Docker',
-        'CI/CD Pipeline Design',
-        'Infrastructure as Code',
         'Jenkins',
-      ],
-    },
-    {
-      category: 'Database & Messaging',
-      items: ['MongoDB', 'MySQL', 'Redis', 'MQTT', 'SQS'],
-    },
-    {
-      category: 'IoT & Hardware',
-      items: [
-        'IoT Architecture',
-        'MQTT Protocol',
-        'OTA Updates',
-        'Android Development',
-        'Remote Debugging',
-      ],
-    },
-    {
-      category: 'Testing & Quality',
-      items: ['Jest', 'ESLint', 'Unit Testing', 'Integration Testing', 'Performance Testing'],
-    },
-    {
-      category: 'Architecture & Leadership',
-      items: [
-        'Component Libraries',
-        'Design Systems',
-        'Technical Leadership',
-        'Team Scaling',
-        'Mentoring',
-        'Cross-functional Collaboration',
+        'Prometheus',
+        'Grafana',
       ],
     },
   ],
   aboutPageMetadata: {
     title: 'About Me',
     description:
-      'Learn more about me, my skills, and my experience as an Associate Architect at Tekion specializing in AI-powered developer workflows, enterprise CI/CD systems, and IoT platforms.',
+      'Associate Architect building AI agent systems with Agno, LangGraph, and RAG. Platform infrastructure on Azure AKS with ArgoCD, enterprise CI/CD, and distributed IoT architectures.',
     keywords:
-      'associate architect, AI developer workflows, Model Context Protocol, MCP, enterprise architecture, CI/CD optimization, IoT platforms, technical leadership, about me, skills, experience, portfolio',
+      'associate architect, AI agents, LangGraph, Agno, MCP, RAG, Azure AKS, ArgoCD, Kubernetes, CI/CD, distributed systems, platform engineering, OpenTelemetry, Langfuse',
   },
 }
