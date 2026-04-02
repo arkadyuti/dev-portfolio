@@ -109,9 +109,9 @@ export async function deleteFile(bucketName: string, fileName: string) {
 }
 
 export function getPublicFileUrl(bucketName: string, fileName: string): string {
-  const protocol = process.env.MINIO_USE_SSL === 'true' ? 'https' : 'http'
-  const port = process.env.MINIO_PORT ? `:${process.env.MINIO_PORT}` : ''
-  return `${protocol}://${process.env.MINIO_ENDPOINT}/${bucketName}/${fileName}`
+  // Public URLs always use HTTPS — the MinIO endpoint sits behind a reverse proxy
+  const publicProtocol = process.env.MINIO_PUBLIC_PROTOCOL || 'https'
+  return `${publicProtocol}://${process.env.MINIO_ENDPOINT}/${bucketName}/${fileName}`
 }
 
 // Types
