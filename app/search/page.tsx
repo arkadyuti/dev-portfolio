@@ -56,8 +56,8 @@ export default async function SearchPage({
   return (
     <section className="py-12 md:py-20">
       <div className="container-custom max-w-4xl">
-        <span className="mono-label">// search.query</span>
-        <h1 className="section-heading mb-12 text-center">Search</h1>
+        <div className="terminal-page-cmd">grep -r &quot;{searchQuery || '...'}&quot; ./*</div>
+        <h1 className="mb-8 text-center font-mono text-3xl font-bold md:text-4xl">Search</h1>
 
         {/* Client component for interactive search */}
         <SearchForm initialQuery={searchQuery} initialResults={initialResults} />

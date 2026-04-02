@@ -20,10 +20,7 @@ export function Header() {
             href="/"
             className="flex items-center gap-1.5 font-mono text-sm font-medium tracking-tight"
           >
-            <span className="text-primary">~</span>
-            <span className="text-foreground">/dev</span>
-            <span className="text-muted-foreground">/</span>
-            <span className="text-primary font-bold">portfolio</span>
+            <span className="text-terminal">arka</span><span className="text-muted-foreground">@</span><span className="text-primary">portfolio</span><span className="text-muted-foreground">:~</span>
           </Link>
           <span className="hidden sm:inline-flex">
             <StatusDot />

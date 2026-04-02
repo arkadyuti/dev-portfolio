@@ -1,6 +1,6 @@
 import { ArrowRight, Eye } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent } from '@/components/ui/card'
+import { CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { profile } from '@/data/profile-data'
 import Link from '@/components/ui/Link'
@@ -15,10 +15,8 @@ import Script from 'next/script'
 import { Metadata } from 'next'
 import { HeroSection } from './home-hero'
 
-// Explicitly mark page as server component
 export const dynamic = 'force-dynamic'
 
-// Generate metadata for homepage
 export async function generateMetadata(): Promise<Metadata> {
   return genPageMetadata({
     title: `${profile.name} | ${profile.title} | React, TypeScript, AI Expert`,
@@ -28,7 +26,6 @@ export async function generateMetadata(): Promise<Metadata> {
   })
 }
 
-// Server-side data fetching
 async function getFeaturedProjects() {
   try {
     await connectToDatabase()
@@ -36,7 +33,6 @@ async function getFeaturedProjects() {
       .sort({ createdAt: -1 })
       .limit(4)
       .lean()
-
     return transformToProjects(projects)
   } catch (error) {
     logger.error('Error fetching featured projects', error)
@@ -44,7 +40,6 @@ async function getFeaturedProjects() {
   }
 }
 
-// Server-side data fetching for recent blog posts
 async function getRecentBlogPosts() {
   try {
     await connectToDatabase()
@@ -52,7 +47,6 @@ async function getRecentBlogPosts() {
       .sort({ publishedAt: -1 })
       .limit(3)
       .lean()
-
     return transformToBlogs(blogs)
   } catch (error) {
     logger.error('Error fetching recent blog posts', error)
@@ -64,7 +58,6 @@ export default async function Home() {
   const featuredProjects = await getFeaturedProjects()
   const recentPosts = await getRecentBlogPosts()
 
-  // Generate structured data for the person
   const allSkills = profile.skills.flatMap((category) => category.items)
   const personStructuredData = generatePersonStructuredData({
     name: profile.name,
@@ -73,11 +66,10 @@ export default async function Home() {
     image: profile.profileImage,
     url: siteMetadata.siteUrl,
     sameAs: [siteMetadata.github, siteMetadata.linkedin, siteMetadata.x].filter(Boolean),
-    skills: allSkills.slice(0, 20), // Top 20 skills
+    skills: allSkills.slice(0, 20),
     worksFor: { name: 'Tekion', url: 'https://tekion.com' },
   })
 
-  // Generate structured data for the website
   const websiteStructuredData = generateWebsiteStructuredData({
     name: siteMetadata.title,
     url: siteMetadata.siteUrl,
@@ -87,100 +79,94 @@ export default async function Home() {
 
   return (
     <>
-      {/* Add structured data for person */}
       <Script
         id="person-structured-data"
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: personStructuredData }}
       />
-      {/* Add structured data for website */}
       <Script
         id="website-structured-data"
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: websiteStructuredData }}
       />
 
-      {/* Hero Section — interactive client component */}
+      {/* Hero — Terminal Session */}
       <HeroSection />
 
-      {/* Tech Stack Section */}
-      <section className="relative grid-bg py-20">
-        <div className="container-custom">
-          <div className="glass-card rounded-xl border border-border/30 p-6 md:p-10">
-            <div className="mb-12 flex flex-col items-center text-center">
-              <span className="mono-label mb-3">// systems.check</span>
-              <h2 className="section-heading mx-auto text-center">My Tech Stack</h2>
-              <p className="mx-auto max-w-xl text-muted-foreground">
-                These are the technologies I work with on a daily basis to build modern, performant
-                web applications.
-              </p>
+      {/* Tech Stack — as config file */}
+      <section className="relative grid-bg py-16 md:py-20">
+        <div className="container-custom max-w-5xl">
+          <div className="terminal-block">
+            <div className="terminal-header">
+              <span className="terminal-dot bg-destructive/80" />
+              <span className="terminal-dot bg-yellow-500/80" />
+              <span className="terminal-dot bg-terminal/80" />
+              <span className="ml-2 text-muted-foreground/60">stack.conf</span>
             </div>
+            <div className="p-4 md:p-6">
+              <div className="mb-5 font-mono text-xs text-terminal md:text-sm">
+                $ cat /etc/stack.conf
+              </div>
+              <div className="config-table">
+                {profile.skills.map((cat) => (
+                  <div key={cat.category} className="config-row">
+                    <div className="config-header">
+                      <span className="config-key">
+                        {cat.category.toLowerCase().replace(/\s+&\s+/g, '_').replace(/\s+/g, '_')}
+                      </span>
+                      <span className="config-sep">=</span>
+                    </div>
+                    <span className="config-val">
+                      {cat.items.slice(0, cat.items.length >= 4 ? 4 : cat.items.length).join(', ')}
+                      {cat.items.length > 4 && (
+                        <span className="text-muted-foreground">
+                          {' '}
+                          (+{cat.items.length - 4} more)
+                        </span>
+                      )}
+                    </span>
+                  </div>
+                ))}
+              </div>
+              <div className="mt-6 font-mono text-xs text-muted-foreground">
+                {allSkills.length} packages loaded.
+              </div>
+            </div>
+          </div>
 
-            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
-              {profile.skills
-                .flatMap((category) =>
-                  category.items
-                    .slice(0, category.items.length >= 3 ? 3 : category.items.length)
-                    .map((skill, idx) => (
-                      <div
-                        key={`${category.category}-${idx}`}
-                        className="tech-stack-item group"
-                      >
-                        <div className="mb-2 flex h-9 w-9 items-center justify-center rounded-md border border-border/50 bg-primary/5 transition-colors group-hover:border-primary/30 group-hover:bg-primary/10">
-                          <span className="font-mono text-xs font-bold text-primary">
-                            {skill.charAt(0)}
-                          </span>
-                        </div>
-                        <h3 className="text-xs font-medium">{skill}</h3>
-                        <p className="font-mono text-[10px] text-muted-foreground/60">
-                          {category.category}
-                        </p>
-                      </div>
-                    ))
-                )
-                .slice(0, 15)}
-            </div>
-
-            <div className="mt-10 text-center">
-              <Button
-                variant="outline"
-                asChild
-                className="group border-border/50 font-mono text-xs"
-              >
-                <Link href="/about" className="flex items-center gap-2">
-                  View All Technologies{' '}
-                  <ArrowRight className="h-3 w-3 transition-transform group-hover:translate-x-1" />
-                </Link>
-              </Button>
-            </div>
+          <div className="mt-4 text-center">
+            <Button
+              variant="outline"
+              asChild
+              className="group border-border/50 font-mono text-xs"
+            >
+              <Link href="/about" className="flex items-center gap-2">
+                cat --verbose /etc/stack.conf{' '}
+                <ArrowRight className="h-3 w-3 transition-transform group-hover:translate-x-1" />
+              </Link>
+            </Button>
           </div>
         </div>
       </section>
 
       {/* Featured Projects */}
-      <section className="relative grid-bg py-20">
+      <section className="relative grid-bg py-16 md:py-20">
         <div className="container-custom">
-          <div className="glass-card rounded-xl border border-border/30 p-6 md:p-10">
-            <div className="mb-12">
-              <span className="mono-label mb-3 block">// featured.projects</span>
-              <h2 className="section-heading">Featured Projects</h2>
-            </div>
+          <div className="mb-8 font-mono text-xs text-terminal md:text-sm">
+            $ find ./projects --featured --limit 4
+          </div>
 
-            <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-            {featuredProjects.map((project) => (
-              <div
-                key={project.id}
-                className="terminal-block group hover-glow"
-              >
-                {/* Terminal header */}
+          <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+            {featuredProjects.map((project, idx) => (
+              <div key={project.id} className="terminal-block group hover-glow">
                 <div className="terminal-header">
                   <span className="terminal-dot bg-destructive/80" />
                   <span className="terminal-dot bg-yellow-500/80" />
                   <span className="terminal-dot bg-terminal/80" />
-                  <span className="ml-2 truncate text-muted-foreground/60">{project.title}</span>
+                  <span className="ml-2 truncate text-muted-foreground/60">
+                    [{String(idx + 1).padStart(2, '0')}] {project.title}
+                  </span>
                 </div>
-
-                {/* Project image */}
                 <div className="relative aspect-[2/1] w-full overflow-hidden">
                   <Image
                     src={project.coverImage}
@@ -188,18 +174,17 @@ export default async function Home() {
                     width={800}
                     height={400}
                     className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-[1.03]"
-                    priority={false}
                     loading="lazy"
                     placeholder="blur"
                     blurDataURL="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/4gHYSUNDX1BST0ZJTEUAAQEAAAHIAAAAAAQwAABtbnRyUkdCIFhZWiAH4AABAAEAAAAAAABhY3NwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAQAA9tYAAQAAAADTLQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAlkZXNjAAAA8AAAACRyWFlaAAABFAAAABRnWFlaAAABKAAAABRiWFlaAAABPAAAABR3dHB0AAABUAAAABRyVFJDAAABZAAAAChnVFJDAAABZAAAAChiVFJDAAABZAAAAChjcHJ0AAABjAAAADxtbHVjAAAAAAAAAAEAAAAMZW5VUwAAAAgAAAAcAHMAUgBHAEJYWVogAAAAAAAAb6IAADj1AAADkFhZWiAAAAAAAABimQAAt4UAABjaWFlaIAAAAAAAACSgAAAPhAAAts9YWVogAAAAAAAA9tYAAQAAAADTLXBhcmEAAAAAAAQAAAACZmYAAPKnAAANWQAAE9AAAApbAAAAAAAAAABtbHVjAAAAAAAAAAEAAAAMZW5VUwAAACAAAAAcAEcAbwBvAGcAbABlACAASQBuAGMALgAgADIAMAAxADb/2wBDABQODxIPDRQSEBIXFRQdHx4eHRoaHSQtJSEkMjU1LS0yMi4qLjgyPj4+Ojo4Ojo4Ojo4Ojo4Ojo4Ojo4Ojo4Ojr/2wBDAR4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh7/wAARCAAIAAoDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAb/xAAUEAEAAAAAAAAAAAAAAAAAAAAA/8QAFQEBAQAAAAAAAAAAAAAAAAAAAAX/xAAUEQEAAAAAAAAAAAAAAAAAAAAA/9oADAMBAAIRAxEAPwCdABmX/9k="
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-card/80 via-transparent to-transparent" />
                 </div>
-
-                {/* Project details */}
                 <CardContent className="p-5">
-                  <h3 className="mb-2 text-lg font-bold tracking-tight">{project.title}</h3>
-                  <p className="mb-4 line-clamp-2 text-sm text-muted-foreground">
+                  <h3 className="mb-2 font-mono text-sm font-bold tracking-tight md:text-base">
+                    {project.title}
+                  </h3>
+                  <p className="mb-4 line-clamp-2 text-xs text-muted-foreground">
                     {project.description}
                   </p>
                   <div className="mb-4 flex flex-wrap gap-1.5">
@@ -220,13 +205,9 @@ export default async function Home() {
                   </div>
                   <div className="flex gap-2">
                     {project.liveUrl && (
-                      <Button
-                        size="sm"
-                        asChild
-                        className="h-7 font-mono text-[10px]"
-                      >
+                      <Button size="sm" asChild className="h-7 font-mono text-[10px]">
                         <a href={project.liveUrl} target="_blank" rel="noopener noreferrer">
-                          Live Demo
+                          open --demo
                         </a>
                       </Button>
                     )}
@@ -238,7 +219,7 @@ export default async function Home() {
                         className="h-7 border-border/50 font-mono text-[10px]"
                       >
                         <a href={project.githubUrl} target="_blank" rel="noopener noreferrer">
-                          Source Code
+                          open --source
                         </a>
                       </Button>
                     )}
@@ -248,25 +229,22 @@ export default async function Home() {
             ))}
           </div>
 
-          <div className="mt-10 text-center">
-              <Button asChild className="font-mono text-xs">
-                <Link href="/projects" className="flex items-center gap-2">
-                  View All Projects <ArrowRight className="h-3 w-3" />
-                </Link>
-              </Button>
-            </div>
+          <div className="mt-8 text-center">
+            <Button asChild className="font-mono text-xs">
+              <Link href="/projects" className="flex items-center gap-2">
+                ls -la ./projects <ArrowRight className="h-3 w-3" />
+              </Link>
+            </Button>
           </div>
         </div>
       </section>
 
       {/* Recent Blog Posts */}
-      <section className="relative grid-bg py-20">
+      <section className="relative grid-bg py-16 md:py-20">
         <div className="container-custom">
-          <div className="glass-card rounded-xl border border-border/30 p-6 md:p-10">
-            <div className="mb-12">
-              <span className="mono-label mb-3 block">// recent.posts</span>
-              <h2 className="section-heading">Recent Blog Posts</h2>
-            </div>
+          <div className="mb-8 font-mono text-xs text-terminal md:text-sm">
+            $ tail -3 /var/log/posts.log
+          </div>
 
           <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
             {recentPosts.map((post) => (
@@ -278,7 +256,6 @@ export default async function Home() {
                     width={400}
                     height={225}
                     className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-[1.03]"
-                    priority={false}
                     loading="lazy"
                     placeholder="blur"
                     blurDataURL="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/4gHYSUNDX1BST0ZJTEUAAQEAAAHIAAAAAAQwAABtbnRyUkdCIFhZWiAH4AABAAEAAAAAAABhY3NwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAQAA9tYAAQAAAADTLQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAlkZXNjAAAA8AAAACRyWFlaAAABFAAAABRnWFlaAAABKAAAABRiWFlaAAABPAAAABR3dHB0AAABUAAAABRyVFJDAAABZAAAAChnVFJDAAABZAAAAChiVFJDAAABZAAAAChjcHJ0AAABjAAAADxtbHVjAAAAAAAAAAEAAAAMZW5VUwAAAAgAAAAcAHMAUgBHAEJYWVogAAAAAAAAb6IAADj1AAADkFhZWiAAAAAAAABimQAAt4UAABjaWFlaIAAAAAAAACSgAAAPhAAAts9YWVogAAAAAAAA9tYAAQAAAADTLXBhcmEAAAAAAAQAAAACZmYAAPKnAAANWQAAE9AAAApbAAAAAAAAAABtbHVjAAAAAAAAAAEAAAAMZW5VUwAAACAAAAAcAEcAbwBvAGcAbABlACAASQBuAGMALgAgADIAMAAxADb/2wBDABQODxIPDRQSEBIXFRQdHx4eHRoaHSQtJSEkMjU1LS0yMi4qLjgyPj4+Ojo4Ojo4Ojo4Ojo4Ojo4Ojo4Ojo4Ojr/2wBDAR4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh7/wAARCAAIAAoDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAb/xAAUEAEAAAAAAAAAAAAAAAAAAAAA/8QAFQEBAQAAAAAAAAAAAAAAAAAAAAX/xAAUEQEAAAAAAAAAAAAAAAAAAAAA/9oADAMBAAIRAxEAPwCdABmX/9k="
@@ -289,7 +266,7 @@ export default async function Home() {
                     <span>
                       {new Date(post.publishedAt).toLocaleDateString('en-US', {
                         year: 'numeric',
-                        month: 'long',
+                        month: 'short',
                         day: 'numeric',
                       })}
                     </span>
@@ -298,10 +275,10 @@ export default async function Home() {
                       {post.views || 0}
                     </span>
                   </div>
-                  <h3 className="mb-2 text-base font-bold tracking-tight transition-colors group-hover:text-primary">
+                  <h3 className="mb-2 font-mono text-sm font-bold tracking-tight transition-colors group-hover:text-primary">
                     {post.title}
                   </h3>
-                  <p className="line-clamp-2 text-sm text-muted-foreground">{post.excerpt}</p>
+                  <p className="line-clamp-2 text-xs text-muted-foreground">{post.excerpt}</p>
                   <div className="mt-3 flex flex-wrap gap-1.5">
                     {post.tags.slice(0, 2).map((tag) => (
                       <Badge
@@ -318,19 +295,18 @@ export default async function Home() {
             ))}
           </div>
 
-          <div className="mt-10 text-center">
-              <Button asChild className="font-mono text-xs">
-                <Link href="/blogs" className="flex items-center gap-2">
-                  View All Posts <ArrowRight className="h-3 w-3" />
-                </Link>
-              </Button>
-            </div>
+          <div className="mt-8 text-center">
+            <Button asChild className="font-mono text-xs">
+              <Link href="/blogs" className="flex items-center gap-2">
+                ls ./posts <ArrowRight className="h-3 w-3" />
+              </Link>
+            </Button>
           </div>
         </div>
       </section>
 
       {/* Contact CTA */}
-      <section className="grid-bg py-20">
+      <section className="grid-bg py-16 md:py-20">
         <div className="container-custom max-w-4xl">
           <div className="terminal-block">
             <div className="terminal-header">
@@ -339,17 +315,20 @@ export default async function Home() {
               <span className="terminal-dot bg-terminal/80" />
               <span className="ml-2 text-muted-foreground/60">connection_request.sh</span>
             </div>
-            <div className="p-8 text-center md:p-12">
-              <h2 className="mb-4 text-3xl font-bold tracking-tight md:text-4xl">
+            <div className="p-6 md:p-10">
+              <div className="mb-6 font-mono text-xs text-terminal md:text-sm">
+                $ ./connection_request.sh
+              </div>
+              <h2 className="mb-4 text-2xl font-bold tracking-tight md:text-3xl">
                 Let's Work Together
               </h2>
-              <p className="mx-auto mb-8 max-w-lg text-muted-foreground">
+              <p className="mx-auto mb-8 max-w-lg text-sm text-muted-foreground">
                 Interested in working together? I'm always open to discussing new projects,
                 opportunities, and collaborations.
               </p>
               <Button size="lg" asChild className="font-mono text-xs">
                 <a href={`mailto:${profile.socialLinks.email.replace('mailto:', '')}`}>
-                  Get In Touch
+                  open mailto:
                 </a>
               </Button>
             </div>

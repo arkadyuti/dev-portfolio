@@ -31,9 +31,8 @@ export function Footer() {
     fetch('/build-info.json')
       .then((res) => res.json())
       .then((data) => setBuildInfo(data))
-      .catch((err) => {
-        logger.error('Failed to fetch build info', err)
-        // Fallback to package.json version
+      .catch(() => {
+        // build-info.json only exists in production — silent fallback in dev
         const now = new Date()
         setBuildInfo({
           version: '1.0.1',
@@ -92,10 +91,7 @@ export function Footer() {
               href="/"
               className="inline-flex items-center gap-1.5 font-mono text-sm font-medium"
             >
-              <span className="text-primary">~</span>
-              <span className="text-foreground">/dev</span>
-              <span className="text-muted-foreground">/</span>
-              <span className="text-primary font-bold">portfolio</span>
+              <span className="text-terminal">arka</span><span className="text-muted-foreground">@</span><span className="text-primary">portfolio</span><span className="text-muted-foreground">:~</span>
             </Link>
             <p className="text-sm text-muted-foreground">
               Showcasing my journey and expertise as a frontend architect.
@@ -105,7 +101,7 @@ export function Footer() {
           {/* Links */}
           <div className="space-y-4">
             <h3 className="font-mono text-xs font-medium uppercase tracking-widest text-muted-foreground">
-              Links
+              # sitemap
             </h3>
             <nav className="flex flex-col space-y-2">
               {[
@@ -132,7 +128,7 @@ export function Footer() {
           {/* Newsletter */}
           <div className="space-y-4">
             <h3 className="font-mono text-xs font-medium uppercase tracking-widest text-muted-foreground">
-              Newsletter
+              # subscribe
             </h3>
             <form onSubmit={handleNewsletterSubmit} className="space-y-3">
               <p className="text-sm text-muted-foreground">
@@ -153,7 +149,7 @@ export function Footer() {
                   size="sm"
                   className="font-mono text-xs"
                 >
-                  {isLoading ? '...' : 'subscribe'}
+                  {isLoading ? '...' : '>>'}
                 </Button>
               </div>
             </form>
@@ -164,11 +160,11 @@ export function Footer() {
         <div className="mt-10 flex flex-col items-center justify-between gap-4 border-t border-border/30 pt-6 md:flex-row">
           <div className="flex flex-col items-center gap-1 md:items-start">
             <p className="font-mono text-xs text-muted-foreground/70">
-              Built with passion for open source
+              # built with passion for open source
             </p>
             {buildInfo && (
               <p className="font-mono text-[10px] text-muted-foreground/40">
-                v{buildInfo.version} / build #{buildInfo.buildNumber}
+                pid {buildInfo.buildNumber} · v{buildInfo.version}
               </p>
             )}
           </div>

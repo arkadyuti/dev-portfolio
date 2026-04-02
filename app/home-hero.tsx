@@ -1,111 +1,111 @@
 'use client'
 
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { Button } from '@/components/ui/button'
 import { profile } from '@/data/profile-data'
 import Link from '@/components/ui/Link'
 import Image from 'next/image'
-import { TypingEffect } from '@/components/fx/typing-effect'
-import { StatusDot } from '@/components/fx/status-dot'
+import { TerminalLines, cmd, out, dim, accent, blank } from '@/components/fx/terminal-lines'
+
+// Break bio into lines that fit terminal width (~70 chars)
+function wrapText(text: string, maxLen = 72): string[] {
+  const words = text.split(' ')
+  const lines: string[] = []
+  let current = ''
+  for (const word of words) {
+    if (current.length + word.length + 1 > maxLen) {
+      lines.push(current)
+      current = word
+    } else {
+      current = current ? `${current} ${word}` : word
+    }
+  }
+  if (current) lines.push(current)
+  return lines
+}
 
 export function HeroSection() {
-  const [showContent, setShowContent] = useState(false)
-  const [mousePos, setMousePos] = useState({ x: 0, y: 0 })
-  const sectionRef = useRef<HTMLElement>(null)
+  const [sessionReady, setSessionReady] = useState(false)
+  const [showImage, setShowImage] = useState(false)
+  const [showNav, setShowNav] = useState(false)
 
-  useEffect(() => {
-    // Stagger reveal after typing starts
-    const timer = setTimeout(() => setShowContent(true), 800)
-    return () => clearTimeout(timer)
+  const bioLines = wrapText(profile.bio)
+
+  const terminalContent = [
+    cmd('ssh arka@dev.portfolio'),
+    dim('Connection established.'),
+    blank(80),
+    cmd('whoami'),
+    out(profile.name, 'text-primary font-bold text-base md:text-lg'),
+    blank(60),
+    cmd('cat ./role'),
+    out(profile.title),
+    blank(60),
+    cmd('uptime'),
+    { text: '● available · 9+ years · focus: AI agents', color: 'text-terminal' },
+    blank(80),
+    cmd('head ./README.md'),
+    ...bioLines.map((line) => dim(line)),
+    blank(100),
+    cmd('ls ./'),
+    accent('  projects/   blogs/   about.md   resume.pdf'),
+    blank(),
+  ]
+
+  const handleSessionComplete = useCallback(() => {
+    setSessionReady(true)
+    setTimeout(() => setShowNav(true), 300)
   }, [])
 
   useEffect(() => {
-    const section = sectionRef.current
-    if (!section) return
-
-    const handleMove = (e: MouseEvent) => {
-      const rect = section.getBoundingClientRect()
-      setMousePos({
-        x: (e.clientX - rect.left) / rect.width,
-        y: (e.clientY - rect.top) / rect.height,
-      })
-    }
-
-    section.addEventListener('mousemove', handleMove, { passive: true })
-    return () => section.removeEventListener('mousemove', handleMove)
+    const t = setTimeout(() => setShowImage(true), 1200)
+    return () => clearTimeout(t)
   }, [])
 
   return (
-    <section ref={sectionRef} className="relative min-h-[85vh] overflow-hidden grid-bg">
-      {/* Ambient glow that reacts to mouse */}
+    <section className="relative min-h-[85vh] grid-bg">
+      {/* Corner accents */}
       <div
-        className="pointer-events-none absolute inset-0 transition-opacity duration-1000"
-        style={{
-          background: `radial-gradient(800px ellipse at ${mousePos.x * 100}% ${mousePos.y * 100}%, hsl(var(--primary) / 0.04), transparent 50%)`,
-        }}
+        className="pointer-events-none absolute left-0 top-0 h-24 w-24 border-l border-t border-primary/10"
+        aria-hidden="true"
+      />
+      <div
+        className="pointer-events-none absolute bottom-0 right-0 h-24 w-24 border-b border-r border-primary/10"
         aria-hidden="true"
       />
 
-      {/* Corner accents */}
-      <div className="pointer-events-none absolute left-0 top-0 h-32 w-32 border-l border-t border-primary/10" aria-hidden="true" />
-      <div className="pointer-events-none absolute bottom-0 right-0 h-32 w-32 border-b border-r border-primary/10" aria-hidden="true" />
-
-      <div className="container-custom flex min-h-[85vh] items-center py-20">
-        <div className="grid w-full grid-cols-1 items-center gap-12 lg:grid-cols-12">
-          {/* Left column — Text content */}
+      <div className="container-custom flex min-h-[85vh] items-center py-16 md:py-20">
+        <div className="grid w-full grid-cols-1 items-start gap-8 lg:grid-cols-12 lg:gap-12">
+          {/* Left — Terminal Session */}
           <div className="lg:col-span-7">
-            {/* Terminal-style prefix */}
-            <div className="mb-6 inline-flex items-center gap-3 rounded-md border border-border/40 bg-card/50 px-3 py-1.5 backdrop-blur-sm">
-              <StatusDot label="available" />
-              <span className="h-3 w-px bg-border/50" />
-              <span className="font-mono text-[10px] text-muted-foreground">associate architect</span>
+            <div className="terminal-block">
+              <div className="terminal-header">
+                <span className="terminal-dot bg-destructive/80" />
+                <span className="terminal-dot bg-yellow-500/80" />
+                <span className="terminal-dot bg-terminal/80" />
+                <span className="ml-2 text-muted-foreground/60">arka@portfolio: ~</span>
+              </div>
+              <div className="p-4 md:p-6">
+                <TerminalLines
+                  lines={terminalContent}
+                  speed={70}
+                  startDelay={300}
+                  onComplete={handleSessionComplete}
+                />
+              </div>
             </div>
 
-            {/* Name with typing effect */}
-            <h1 className="mb-4 font-heading text-4xl font-bold tracking-tight md:text-5xl lg:text-6xl">
-              <TypingEffect
-                text="Arkadyuti Sarkar"
-                speed={55}
-                className="text-primary"
-                cursor={true}
-              />
-            </h1>
-
-            {/* Title */}
-            <h2
-              className="mb-6 text-xl font-medium text-foreground/80 md:text-2xl"
-              style={{
-                opacity: showContent ? 1 : 0,
-                transform: showContent ? 'none' : 'translateY(10px)',
-                transition: 'opacity 0.6s ease 0.2s, transform 0.6s ease 0.2s',
-              }}
-            >
-              {profile.title}
-            </h2>
-
-            {/* Bio */}
-            <p
-              className="mb-8 max-w-xl text-base leading-relaxed text-muted-foreground md:text-lg"
-              style={{
-                opacity: showContent ? 1 : 0,
-                transform: showContent ? 'none' : 'translateY(10px)',
-                transition: 'opacity 0.6s ease 0.4s, transform 0.6s ease 0.4s',
-              }}
-            >
-              {profile.bio}
-            </p>
-
-            {/* CTA Buttons */}
+            {/* Navigation commands — appear after session completes */}
             <div
-              className="flex flex-wrap gap-3"
+              className="mt-4 flex flex-wrap gap-3"
               style={{
-                opacity: showContent ? 1 : 0,
-                transform: showContent ? 'none' : 'translateY(10px)',
-                transition: 'opacity 0.6s ease 0.6s, transform 0.6s ease 0.6s',
+                opacity: showNav ? 1 : 0,
+                transform: showNav ? 'none' : 'translateY(8px)',
+                transition: 'opacity 0.4s ease, transform 0.4s ease',
               }}
             >
               <Button size="lg" asChild className="font-mono text-xs">
-                <Link href="/projects">View My Work</Link>
+                <Link href="/projects">ls ./projects</Link>
               </Button>
               <Button
                 size="lg"
@@ -113,42 +113,40 @@ export function HeroSection() {
                 asChild
                 className="border-border/50 font-mono text-xs"
               >
-                <Link href="/about">About Me</Link>
+                <Link href="/blogs">tail ./posts</Link>
+              </Button>
+              <Button
+                size="lg"
+                variant="outline"
+                asChild
+                className="border-border/50 font-mono text-xs"
+              >
+                <Link href="/about">cat ./about</Link>
               </Button>
             </div>
           </div>
 
-          {/* Right column — Profile Image */}
+          {/* Right — Profile Image */}
           <div
             className="flex justify-center lg:col-span-5 lg:justify-end"
             style={{
-              opacity: showContent ? 1 : 0,
-              transform: showContent ? 'none' : 'translateY(20px)',
-              transition: 'opacity 0.8s ease 0.3s, transform 0.8s ease 0.3s',
+              opacity: showImage ? 1 : 0,
+              transform: showImage ? 'none' : 'translateY(16px)',
+              transition: 'opacity 0.8s ease, transform 0.8s ease',
             }}
           >
-            <div className="relative w-full max-w-sm">
-              {/* Glow behind image */}
-              <div
-                className="absolute -inset-4 rounded-2xl opacity-30 blur-3xl"
-                style={{
-                  background: `radial-gradient(ellipse at ${mousePos.x * 100}% ${mousePos.y * 100}%, hsl(var(--primary) / 0.3), transparent 70%)`,
-                }}
-                aria-hidden="true"
-              />
-
-              {/* Image wrapper with terminal-style frame */}
-              <div className="terminal-block relative">
+            <div className="w-full max-w-xs lg:max-w-sm">
+              <div className="terminal-block">
                 <div className="terminal-header">
                   <span className="terminal-dot bg-destructive/80" />
                   <span className="terminal-dot bg-yellow-500/80" />
                   <span className="terminal-dot bg-terminal/80" />
-                  <span className="ml-2 text-muted-foreground/60">profile.jpg</span>
+                  <span className="ml-2 text-muted-foreground/60">feh profile.jpg</span>
                 </div>
                 <div className="scanline relative overflow-hidden">
                   <Image
                     src={profile.profileImage}
-                    alt={`${profile.name} - ${profile.title} specializing in React, TypeScript, and AI development`}
+                    alt={`${profile.name} - ${profile.title}`}
                     width={400}
                     height={400}
                     className="aspect-square w-full object-cover"
@@ -160,14 +158,14 @@ export function HeroSection() {
                 </div>
               </div>
 
-              {/* Floating data labels — hidden on small screens */}
-              <div className="absolute -right-2 top-1/4 hidden rounded-md border border-border/40 bg-card/80 px-2.5 py-1 font-mono text-[10px] backdrop-blur-sm sm:block">
-                <span className="text-muted-foreground">exp:</span>{' '}
-                <span className="text-primary">9+ yrs</span>
-              </div>
-              <div className="absolute -left-2 bottom-1/4 hidden rounded-md border border-border/40 bg-card/80 px-2.5 py-1 font-mono text-[10px] backdrop-blur-sm sm:block">
-                <span className="text-muted-foreground">focus:</span>{' '}
-                <span className="text-terminal">AI agents</span>
+              {/* Metadata below image */}
+              <div className="mt-3 flex items-center justify-between px-1 font-mono text-[10px] text-muted-foreground">
+                <span>
+                  <span className="text-primary">exp:</span> 9+ yrs
+                </span>
+                <span>
+                  <span className="text-terminal">focus:</span> AI agents
+                </span>
               </div>
             </div>
           </div>

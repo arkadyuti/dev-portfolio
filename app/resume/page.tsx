@@ -27,8 +27,8 @@ export default async function ResumePage() {
   return (
     <section className="py-8 md:py-12">
       <div className="container-custom">
-        <span className="mono-label">// resume.pdf</span>
-        <h1 className="section-heading text-center">Resume</h1>
+        <div className="terminal-page-cmd">open ./resume.pdf</div>
+        <h1 className="mb-8 text-center font-mono text-3xl font-bold md:text-4xl">Resume</h1>
 
         {resume ? (
           <ResumeViewer fileUrl={resume.fileUrl} uploadedAt={resume.uploadedAt} />

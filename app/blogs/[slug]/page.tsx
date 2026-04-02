@@ -120,7 +120,7 @@ export default async function BlogDetail({ params }: { params: Promise<{ slug: s
               <Button variant="ghost" asChild className="pl-0 font-mono text-xs transition-all duration-200 hover:pl-2">
                 <Link href="/blogs" className="flex items-center gap-2">
                   <ArrowLeft className="h-4 w-4" />
-                  Back to all posts
+                  cd ../posts
                 </Link>
               </Button>
             </div>
@@ -169,6 +169,7 @@ export default async function BlogDetail({ params }: { params: Promise<{ slug: s
 
           {/* Cover Image */}
           <ScrollReveal direction="up" delay={100}>
+            <div className="mb-3 font-mono text-xs text-terminal">$ cat ./posts/{post.slug}.md</div>
             <div className="terminal-block mb-10">
               <div className="terminal-header">
                 <div className="terminal-dot bg-red-500"></div>
@@ -219,6 +220,7 @@ export default async function BlogDetail({ params }: { params: Promise<{ slug: s
         <section className="border-t border-border/30 py-12">
           <div className="container-custom max-w-4xl">
             <ScrollReveal direction="up">
+              <div className="mb-3 font-mono text-xs text-terminal">$ ls --related</div>
               <h2 className="mb-8 text-2xl font-bold">Related Posts</h2>
             </ScrollReveal>
 
