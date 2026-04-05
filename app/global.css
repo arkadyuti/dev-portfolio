@@ -146,9 +146,7 @@
   /* ---- Blog Card ---- */
   .blog-card {
     @apply rounded-lg overflow-hidden border transition-all duration-500;
-    background: hsl(var(--card) / 0.7);
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
+    background: hsl(var(--card) / 0.95);
     border-color: hsl(var(--border) / 0.6);
   }
 
@@ -162,9 +160,7 @@
 
   /* ---- Glass Card ---- */
   .glass-card {
-    background: hsl(var(--card) / 0.5);
-    backdrop-filter: blur(20px);
-    -webkit-backdrop-filter: blur(20px);
+    background: hsl(var(--card) / 0.92);
     border: 1px solid hsl(var(--border) / 0.5);
     @apply rounded-lg transition-all duration-500;
   }
@@ -192,9 +188,7 @@
   /* ---- Terminal Block ---- */
   .terminal-block {
     @apply rounded-lg border overflow-hidden;
-    background: hsl(var(--card) / 0.8);
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
+    background: hsl(var(--card) / 0.96);
   }
 
   .terminal-header {

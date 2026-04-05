@@ -19,7 +19,7 @@ const inter = Inter({
   subsets: ['latin'],
   display: 'swap',
   variable: '--font-inter',
-  weight: ['300', '400', '500', '600', '700'],
+  weight: ['400', '500', '600', '700'],
 })
 
 // Load Poppins font
@@ -27,7 +27,7 @@ const poppins = Poppins({
   subsets: ['latin'],
   display: 'swap',
   variable: '--font-poppins',
-  weight: ['400', '500', '600', '700'],
+  weight: ['500', '600', '700'],
 })
 
 // Load JetBrains Mono for terminal aesthetics
@@ -35,7 +35,7 @@ const jetbrainsMono = JetBrains_Mono({
   subsets: ['latin'],
   display: 'swap',
   variable: '--font-jetbrains',
-  weight: ['400', '500', '700'],
+  weight: ['400', '700'],
 })
 
 export const metadata: Metadata = {
@@ -111,6 +111,8 @@ export default async function RootLayout({ children }: { children: React.ReactNo
       suppressHydrationWarning
     >
       <head>
+        <link rel="preconnect" href="https://minio-api.3027622.siliconpin.com" />
+        <link rel="dns-prefetch" href="https://minio-api.3027622.siliconpin.com" />
         <link
           rel="apple-touch-icon"
           sizes="76x76"

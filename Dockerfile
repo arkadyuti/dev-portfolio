@@ -30,10 +30,9 @@ COPY --from=deps /app/yarn.lock ./
 # Copy source code
 COPY . .
 
-# Set build environment variables to avoid DB connection during build
-#ENV SKIP_ENV_VALIDATION=true
-#ENV MONGODB_URI="mongodb://placeholder:27017/placeholder"
-#ENV NEXT_PHASE="phase-production-build"
+# Accept NEXT_PUBLIC_* vars as build args so they're inlined at build time
+ARG NEXT_PUBLIC_GA_ID
+ENV NEXT_PUBLIC_GA_ID=$NEXT_PUBLIC_GA_ID
 
 # Build the application
 RUN yarn build

@@ -10,7 +10,7 @@ export function CursorGlow() {
   const updateGlow = useCallback(() => {
     const el = glowRef.current
     if (!el) return
-    el.style.background = `radial-gradient(600px circle at ${posRef.current.x}px ${posRef.current.y}px, hsl(var(--glow) / 0.06), transparent 40%)`
+    el.style.transform = `translate(${posRef.current.x - 300}px, ${posRef.current.y - 300}px)`
   }, [])
 
   useEffect(() => {
@@ -45,8 +45,17 @@ export function CursorGlow() {
   return (
     <div
       ref={glowRef}
-      className="pointer-events-none fixed inset-0 z-30 transition-opacity duration-500"
-      style={{ opacity: 0 }}
+      className="pointer-events-none fixed z-30 transition-opacity duration-500"
+      style={{
+        opacity: 0,
+        width: 600,
+        height: 600,
+        top: 0,
+        left: 0,
+        borderRadius: '50%',
+        background: 'radial-gradient(circle, hsl(var(--glow) / 0.06), transparent 70%)',
+        willChange: 'transform',
+      }}
       aria-hidden="true"
     />
   )
