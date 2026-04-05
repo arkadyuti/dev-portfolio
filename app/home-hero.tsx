@@ -150,7 +150,7 @@ export function HeroSection() {
                     width={400}
                     height={400}
                     sizes="(max-width: 1024px) 280px, 384px"
-                    className="aspect-square w-full object-cover"
+                    className="aspect-square w-full object-cover object-top"
                     loading="eager"
                     priority={true}
                     placeholder="blur"

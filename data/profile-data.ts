@@ -46,7 +46,7 @@ Before that, designed a distributed IoT platform for connected displays — RFID
 
 When I'm not building, I'm usually gaming on my PC or PS5. Always up for conversations about agent architectures, distributed systems, or platform engineering.
   `,
-  profileImage: 'https://minio-api.3027622.siliconpin.com/portfolio/arkadyuti-sarkar.jpg',
+  profileImage: '/static/images/profile.webp',
   socialLinks: {
     github: 'https://github.com/arkadyuti',
     linkedin: 'https://www.linkedin.com/in/arkadyuti/',
