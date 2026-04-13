@@ -13,6 +13,7 @@ import { Toaster } from '@/components/ui/toaster'
 import { Toaster as Sonner } from '@/components/ui/sonner'
 import { GoogleAnalytics } from '@/components/analytics/GoogleAnalytics'
 import { CursorGlow } from '@/components/fx/cursor-glow'
+import { CommandPalette } from '@/components/command-palette'
 
 // Load Inter font
 const inter = Inter({
@@ -181,6 +182,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
               <Toaster />
               <Sonner />
               <CursorGlow />
+              <CommandPalette />
               <div className="flex min-h-screen flex-col">
                 <Header />
                 <main className="flex-grow pb-16 md:pb-0">{children}</main>

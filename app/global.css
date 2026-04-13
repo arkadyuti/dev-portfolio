@@ -148,6 +148,28 @@
     @apply rounded-lg overflow-hidden border transition-all duration-500;
     background: hsl(var(--card) / 0.95);
     border-color: hsl(var(--border) / 0.6);
+    position: relative;
+  }
+
+  .blog-card::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: repeating-linear-gradient(
+      0deg,
+      transparent,
+      transparent 2px,
+      hsl(var(--foreground) / 0.02) 2px,
+      hsl(var(--foreground) / 0.02) 4px
+    );
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.5s ease;
+    z-index: 1;
+  }
+
+  .blog-card:hover::after {
+    opacity: 1;
   }
 
   .blog-card:hover {
@@ -189,6 +211,20 @@
   .terminal-block {
     @apply rounded-lg border overflow-hidden;
     background: hsl(var(--card) / 0.96);
+    position: relative;
+  }
+
+  /* CRT scanline sweep — subtle moving line */
+  .terminal-block::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    right: 0;
+    height: 2px;
+    z-index: 10;
+    pointer-events: none;
+    background: linear-gradient(90deg, transparent, hsl(var(--primary) / 0.06), transparent);
+    animation: scanline-sweep 6s linear infinite;
   }
 
   .terminal-header {
@@ -199,7 +235,14 @@
   }
 
   .terminal-dot {
-    @apply w-2 h-2 rounded-full;
+    @apply w-2 h-2 rounded-full border-0 p-0 cursor-default;
+    /* Reset button styles when used as <button> */
+    background-color: inherit;
+    outline: none;
+  }
+
+  button.terminal-dot {
+    @apply cursor-pointer;
   }
 
   /* ---- Mono Label ---- */
@@ -416,4 +459,20 @@
   10% { opacity: 1; transform: translateY(0); }
   90% { opacity: 1; transform: translateY(0); }
   100% { opacity: 0; transform: translateY(4px); }
+}
+
+@keyframes scanline-sweep {
+  0% { top: 0; }
+  100% { top: 100%; }
+}
+
+@keyframes status-glow {
+  0%, 100% {
+    opacity: 0.5;
+    box-shadow: 0 0 3px hsl(var(--terminal) / 0.3);
+  }
+  50% {
+    opacity: 1;
+    box-shadow: 0 0 10px hsl(var(--terminal) / 0.6);
+  }
 }

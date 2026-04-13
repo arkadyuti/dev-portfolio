@@ -197,6 +197,10 @@ REDIS_PORT=6379
 - Standalone Next.js output in Docker
 - React Query for efficient data fetching
 
+### Playwright MCP
+
+- Save all Playwright output (snapshots, screenshots, console logs) to `/mnt/personal/work/projects/.playwright-mcp/` — do NOT put them in the project root or workspace
+
 ### Development Notes
 
 - **Package Manager**: Yarn (v3.6.1)
