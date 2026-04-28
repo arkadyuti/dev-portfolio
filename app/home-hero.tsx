@@ -3,7 +3,7 @@
 import { useState, useRef, useMemo, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
-import { profile } from '@/data/profile-data'
+import { profile, bioKeywords } from '@/data/profile-data'
 import Link from '@/components/ui/Link'
 import Image from 'next/image'
 import { cmd, out, dim, accent, blank, type TLine } from '@/components/fx/terminal-lines'
@@ -14,7 +14,7 @@ import { useTerminal } from '@/hooks/use-terminal'
 import { MatrixRain } from '@/components/fx/matrix-rain'
 import { cn } from '@/lib/utils'
 
-// Break bio into lines that fit terminal width (~70 chars)
+// Break bio into lines that fit terminal width (~70 chars), preserving keywords as units
 function wrapText(text: string, maxLen = 72): string[] {
   const words = text.split(' ')
   const lines: string[] = []
@@ -29,6 +29,21 @@ function wrapText(text: string, maxLen = 72): string[] {
   }
   if (current) lines.push(current)
   return lines
+}
+
+function escapeHtml(s: string): string {
+  return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+}
+
+// Highlight keywords in a line of text by wrapping them in primary-colored spans
+function highlightKeywords(line: string): string {
+  let result = escapeHtml(line)
+  for (const kw of bioKeywords) {
+    const escaped = escapeHtml(kw)
+    const pattern = new RegExp(`(${escaped.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'g')
+    result = result.replace(pattern, '<span class="text-primary">$1</span>')
+  }
+  return result
 }
 
 
@@ -47,7 +62,11 @@ export function HeroSection() {
 
 
   const terminalContent = useMemo(() => {
-    const bioLines = wrapText(profile.bio)
+    const bioLines = wrapText(profile.bio).map((line) => ({
+      text: highlightKeywords(line),
+      color: 'text-muted-foreground',
+      isHtml: true,
+    }))
     return [
       cmd('ssh arka@dev.portfolio'),
       dim('Connection established.'),
@@ -62,7 +81,7 @@ export function HeroSection() {
       { text: '● available · 9+ years · focus: AI agents', color: 'text-terminal' },
       blank(80),
       cmd('head ./README.md'),
-      ...bioLines.map((line) => dim(line)),
+      ...bioLines,
       blank(100),
       cmd('ls ./'),
       accent('  projects/   blogs/   about.md   resume.pdf'),
@@ -118,11 +137,19 @@ export function HeroSection() {
               >
                 {/* Boot sequence — static */}
                 <div className="font-mono text-xs leading-relaxed md:text-sm">
-                  {terminalContent.map((line, i) => (
-                    <div key={i} className={line.color || 'text-foreground/80'}>
-                      {line.text || '\u00A0'}
-                    </div>
-                  ))}
+                  {terminalContent.map((line, i) =>
+                    line.isHtml ? (
+                      <div
+                        key={i}
+                        className={line.color || 'text-foreground/80'}
+                        dangerouslySetInnerHTML={{ __html: line.text || '\u00A0' }}
+                      />
+                    ) : (
+                      <div key={i} className={line.color || 'text-foreground/80'}>
+                        {line.text || '\u00A0'}
+                      </div>
+                    )
+                  )}
                 </div>
 
                 {/* Interactive terminal output + input */}

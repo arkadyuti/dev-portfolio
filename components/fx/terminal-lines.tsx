@@ -2,6 +2,7 @@ export interface TLine {
   text: string
   color?: string
   delay?: number
+  isHtml?: boolean
 }
 
 export function cmd(command: string): TLine {

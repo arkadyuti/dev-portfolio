@@ -1,3 +1,23 @@
+// Keywords highlighted in the homepage bio — order matters for greedy matching (longest first)
+export const bioKeywords: string[] = [
+  'multi-agent pipelines',
+  'graph',
+  'Associate Architect',
+  'distributed architectures',
+  'platform infrastructure',
+  'AI agent systems',
+  'enterprise CI/CD',
+  'vector search',
+  'GitOps',
+  'MQTT',
+  'Azure AKS',
+  'LangGraph',
+  '250+ developers',
+  '9+ years',
+  'RAG layer',
+  'Agno',
+]
+
 export interface Profile {
   name: string
   title: string
@@ -67,6 +87,7 @@ When I'm not building, I'm usually gaming on my PC or PS5. Always up for convers
         'OpenTelemetry',
         'Langfuse',
         'Flowise',
+        'ThoughtSpot',
       ],
     },
     {
@@ -101,6 +122,8 @@ When I'm not building, I'm usually gaming on my PC or PS5. Always up for convers
         'Redis',
         'Prisma',
         'MQTT',
+        'OAuth 2.0',
+        'OAuth Server',
       ],
     },
     {
@@ -110,6 +133,8 @@ When I'm not building, I'm usually gaming on my PC or PS5. Always up for convers
         'AWS',
         'Kubernetes',
         'ArgoCD',
+        'GitOps',
+        'CI/CD',
         'APISIX',
         'Docker',
         'Jenkins',
