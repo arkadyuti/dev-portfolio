@@ -1,6 +1,6 @@
 # Multi-stage build for Next.js application
-# Using Node 20 LTS with SHA256 digest for security
-FROM node:20-alpine@sha256:f598378b5240225e6beab68fa9f356db1fb8efe55173e6d4d8153113bb8f333c AS deps
+# Using Node 20 LTS — unpinned tag so security patches flow in on rebuild
+FROM node:20-alpine AS deps
 WORKDIR /app
 
 # Install corepack first for better layer caching
@@ -14,7 +14,7 @@ COPY .yarn ./.yarn
 RUN yarn install --frozen-lockfile --check-cache --network-timeout 300000
 
 # Build stage
-FROM node:20-alpine@sha256:f598378b5240225e6beab68fa9f356db1fb8efe55173e6d4d8153113bb8f333c AS builder
+FROM node:20-alpine AS builder
 WORKDIR /app
 
 # Setup corepack for yarn
@@ -38,7 +38,7 @@ ENV NEXT_PUBLIC_GA_ID=$NEXT_PUBLIC_GA_ID
 RUN yarn build
 
 # Production stage
-FROM node:20-alpine@sha256:f598378b5240225e6beab68fa9f356db1fb8efe55173e6d4d8153113bb8f333c AS runner
+FROM node:20-alpine AS runner
 WORKDIR /app
 
 # Apply latest security patches to base image
