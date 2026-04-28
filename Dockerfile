@@ -41,6 +41,9 @@ RUN yarn build
 FROM node:20-alpine@sha256:f598378b5240225e6beab68fa9f356db1fb8efe55173e6d4d8153113bb8f333c AS runner
 WORKDIR /app
 
+# Apply latest security patches to base image
+RUN apk upgrade --no-cache
+
 ENV NODE_ENV=production
 ENV PORT=3000
 ENV HOSTNAME=0.0.0.0
