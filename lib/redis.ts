@@ -113,6 +113,8 @@ export async function closeRedisConnection(): Promise<void> {
   if (redis) {
     await redis.quit()
     redis = null
+    // Reset so a later reconnect doesn't reuse the previous client's promise.
+    connectionPromise = null
   }
 }
 

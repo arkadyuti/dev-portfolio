@@ -1,11 +1,8 @@
 import { describe, it, expect, vi } from 'vitest'
 import { renderHook, act } from '@testing-library/react'
 import { useTerminal } from '@/hooks/use-terminal'
-import { reducer } from '@/hooks/use-terminal'
 
-// Re-export the internal reducer for direct unit testing via a workaround —
-// since reducer is not exported, we test the hook's observable state instead.
-// (The reducer itself is thoroughly exercised through the hook API.)
+// The internal reducer is not exported — it is exercised through the hook API below.
 
 // ── useTerminal hook ──────────────────────────────────────────────────────
 

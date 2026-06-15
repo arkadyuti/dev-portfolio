@@ -99,13 +99,33 @@ describe('GET /api/blogs', () => {
     expect(json.pagination.totalPages).toBe(6)
   })
 
-  it('includes isDraft filter when fetchAll param is empty string', async () => {
-    mockCountDocuments.mockResolvedValueOnce(2)
-    mockFind.mockReturnValueOnce(makeChain([fakeBlog, { ...fakeBlog, id: 'b2', isDraft: true }]))
+  it('excludes drafts on the default (public) listing — no fetchAll param', async () => {
+    mockCountDocuments.mockResolvedValueOnce(1)
+    mockFind.mockReturnValueOnce(makeChain([fakeBlog]))
+
+    const res = await GET(makeRequest(), undefined)
+    expect(res.status).toBe(200)
+    // Security: the public listing must filter out drafts.
+    expect(mockFind).toHaveBeenCalledWith(expect.objectContaining({ isDraft: false }))
+  })
+
+  it('excludes drafts for any fetchAll value other than "true"', async () => {
+    mockCountDocuments.mockResolvedValueOnce(1)
+    mockFind.mockReturnValueOnce(makeChain([fakeBlog]))
 
     const res = await GET(makeRequest({ fetchAll: '' }), undefined)
     expect(res.status).toBe(200)
     expect(mockFind).toHaveBeenCalledWith(expect.objectContaining({ isDraft: false }))
+  })
+
+  it('includes drafts only when fetchAll=true (admin listing)', async () => {
+    mockCountDocuments.mockResolvedValueOnce(2)
+    mockFind.mockReturnValueOnce(makeChain([fakeBlog, { ...fakeBlog, id: 'b2', isDraft: true }]))
+
+    const res = await GET(makeRequest({ fetchAll: 'true' }), undefined)
+    expect(res.status).toBe(200)
+    // Admin call: no isDraft filter applied (drafts included).
+    expect(mockFind).toHaveBeenCalledWith({})
   })
 
   it('returns 500 when DB throws', async () => {

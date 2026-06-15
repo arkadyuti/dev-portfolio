@@ -3,6 +3,7 @@ import { NextRequest } from 'next/server'
 
 const mockVerifyAccessToken = vi.hoisted(() => vi.fn())
 const mockGetUserSessions = vi.hoisted(() => vi.fn())
+const mockGetSession = vi.hoisted(() => vi.fn())
 const mockDeleteSession = vi.hoisted(() => vi.fn())
 const mockDeleteAllUserSessions = vi.hoisted(() => vi.fn())
 
@@ -12,6 +13,7 @@ vi.mock('@/lib/auth/jwt-edge', () => ({
 
 vi.mock('@/lib/auth/session', () => ({
   getUserSessions: mockGetUserSessions,
+  getSession: mockGetSession,
   deleteSession: mockDeleteSession,
   deleteAllUserSessions: mockDeleteAllUserSessions,
 }))
@@ -64,6 +66,7 @@ function makeRequest(
 beforeEach(() => {
   mockVerifyAccessToken.mockResolvedValue(VALID_PAYLOAD)
   mockGetUserSessions.mockResolvedValue(mockSessions)
+  mockGetSession.mockResolvedValue({ sessionId: 'other-session', userId: 'user-123' })
   mockDeleteSession.mockResolvedValue(undefined)
   mockDeleteAllUserSessions.mockResolvedValue(2)
 })
@@ -146,5 +149,28 @@ describe('DELETE /api/auth/sessions', () => {
     const json = await res.json()
     expect(json.data.count).toBe(2)
     expect(mockDeleteAllUserSessions).toHaveBeenCalledWith('user-123')
+  })
+
+  it('IDOR: returns 404 and does not delete when session belongs to a different user', async () => {
+    // Session exists but is owned by a different user — classic IDOR scenario
+    mockGetSession.mockResolvedValue({ sessionId: 'other-session', userId: 'attacker-user-999' })
+    const res = await DELETE(
+      makeRequest('DELETE', { accessToken: 'valid' }, { sessionId: 'other-session' })
+    )
+    expect(res.status).toBe(404)
+    const json = await res.json()
+    expect(json.error.code).toBe('SESSION_NOT_FOUND')
+    expect(mockDeleteSession).not.toHaveBeenCalled()
+  })
+
+  it('IDOR: returns 404 and does not delete when session does not exist', async () => {
+    mockGetSession.mockResolvedValue(null)
+    const res = await DELETE(
+      makeRequest('DELETE', { accessToken: 'valid' }, { sessionId: 'ghost-session' })
+    )
+    expect(res.status).toBe(404)
+    const json = await res.json()
+    expect(json.error.code).toBe('SESSION_NOT_FOUND')
+    expect(mockDeleteSession).not.toHaveBeenCalled()
   })
 })

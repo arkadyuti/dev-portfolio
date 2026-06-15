@@ -4,9 +4,16 @@ import ProjectModels from 'models/project'
 import { logger } from '@/lib/logger'
 import { uploadTempImage, moveToFinalLocation } from '@/lib/image-upload'
 import { withDatabase } from '@/lib/api-middleware'
+import { getCurrentUser } from '@/lib/auth/helpers'
 
 async function handler(request: NextRequest) {
   try {
+    // Require authentication — this route creates/updates content
+    const user = await getCurrentUser()
+    if (!user) {
+      return NextResponse.json({ success: false, message: 'Unauthorized' }, { status: 401 })
+    }
+
     const formData = await request.formData()
     const coverImage = formData.get('coverImage') as File
     const projectId = request.nextUrl.searchParams.get('projectId')

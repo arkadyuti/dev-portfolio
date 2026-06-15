@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { verifyAccessToken } from '@/lib/auth/jwt-edge'
-import { getUserSessions, deleteSession, deleteAllUserSessions } from '@/lib/auth/session'
+import { getSession, getUserSessions, deleteSession, deleteAllUserSessions } from '@/lib/auth/session'
 import { constantTimeCompare } from '@/lib/auth/crypto-utils'
 
 /**
@@ -148,6 +148,22 @@ export async function DELETE(request: NextRequest) {
           },
         },
         { status: 400 }
+      )
+    }
+
+    // Verify the session belongs to the authenticated user before revoking
+    // (prevents IDOR: revoking another user's session by guessing its ID).
+    const target = await getSession(sessionId)
+    if (!target || target.userId !== payload.userId) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: {
+            message: 'Session not found',
+            code: 'SESSION_NOT_FOUND',
+          },
+        },
+        { status: 404 }
       )
     }
 

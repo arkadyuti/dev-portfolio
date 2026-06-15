@@ -16,8 +16,11 @@ async function handler(req: NextRequest) {
       })
     }
 
-    // Create a case-insensitive search regex
-    const searchRegex = { $regex: query, $options: 'i' }
+    // Create a case-insensitive search regex.
+    // Escape regex metacharacters so user input is matched literally — this
+    // prevents ReDoS (catastrophic backtracking) from crafted patterns.
+    const escapedQuery = query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+    const searchRegex = { $regex: escapedQuery, $options: 'i' }
 
     // Search for blogs
     const blogs = await BlogModels.find({

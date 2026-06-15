@@ -3,6 +3,7 @@ import BlogModels, { transformToBlog } from 'models/blog'
 import { ZodError } from 'zod'
 import { queueFileDeletion, queueFileDeletions } from '@/lib/background-tasks'
 import { withDatabase } from '@/lib/api-middleware'
+import { getCurrentUser } from '@/lib/auth/helpers'
 
 async function getHandler(request: NextRequest, context: { params: Promise<{ id: string }> }) {
   try {
@@ -48,6 +49,12 @@ async function getHandler(request: NextRequest, context: { params: Promise<{ id:
 
 async function deleteHandler(request: NextRequest, context: { params: Promise<{ id: string }> }) {
   try {
+    // Require authentication — this route deletes content
+    const user = await getCurrentUser()
+    if (!user) {
+      return NextResponse.json({ success: false, message: 'Unauthorized' }, { status: 401 })
+    }
+
     const { id } = await context.params
 
     // Find the blog post before deleting to get the cover image key

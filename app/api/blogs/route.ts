@@ -15,9 +15,11 @@ async function handler(request: NextRequest) {
     // Get total count of blogs
     const totalBlogs = await BlogModels.countDocuments()
 
-    // Get paginated blogs sorted by publishedAt
+    // Get paginated blogs sorted by publishedAt.
+    // Only the admin (which calls ?fetchAll=true) gets drafts; every other
+    // caller — including the default public listing — excludes drafts.
     const mongoQuery: { isDraft?: boolean } = {}
-    if (fetchAll === '') {
+    if (fetchAll !== 'true') {
       mongoQuery.isDraft = false
     }
     const blogs = await BlogModels.find(mongoQuery)

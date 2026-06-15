@@ -1,3 +1,7 @@
+// @vitest-environment node
+// jwt-edge uses TextEncoder; jose's internal `instanceof Uint8Array` check fails
+// under jsdom's cross-realm polyfill, so this file runs in the node environment
+// (matching the real Edge runtime, which has a native TextEncoder).
 import { describe, it, expect } from 'vitest'
 import jwt from 'jsonwebtoken'
 

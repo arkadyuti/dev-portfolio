@@ -28,17 +28,14 @@ if (!JWT_ACCESS_SECRET) {
 /**
  * Edge-compatible secret key for jose library.
  *
- * We deliberately avoid `new TextEncoder().encode()` here because in
- * environments that polyfill TextEncoder (e.g. jsdom) the resulting
- * Uint8Array comes from a different global and fails jose's
- * `instanceof Uint8Array` check at runtime.  Using `Buffer.from` and
- * wrapping with a native Uint8Array view is safe in both Node.js and
- * the Next.js Edge runtime (which shims Buffer).
+ * Uses the web-standard TextEncoder, which is available in both the Next.js
+ * Edge runtime (where this module runs via middleware) and Node.js. The
+ * jwt-edge unit tests run under the `node` environment so jose's internal
+ * `instanceof Uint8Array` check sees a same-realm typed array — jsdom
+ * polyfills TextEncoder in a different realm, which would break verification
+ * in tests only, never in production.
  */
-const getEdgeSecretKey = (secret: string): Uint8Array => {
-  const buf = Buffer.from(secret, 'utf-8')
-  return new Uint8Array(buf.buffer, buf.byteOffset, buf.byteLength)
-}
+const getEdgeSecretKey = (secret: string) => new TextEncoder().encode(secret)
 
 /**
  * Verify and decode access token

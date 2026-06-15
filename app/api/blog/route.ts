@@ -4,9 +4,16 @@ import BlogModels from 'models/blog'
 import logger from '@/lib/logger'
 import { uploadTempImage, moveToFinalLocation } from '@/lib/image-upload'
 import { withDatabase } from '@/lib/api-middleware'
+import { getCurrentUser } from '@/lib/auth/helpers'
 
 async function handler(request: NextRequest) {
   try {
+    // Require authentication — this route creates/updates content
+    const user = await getCurrentUser()
+    if (!user) {
+      return NextResponse.json({ success: false, message: 'Unauthorized' }, { status: 401 })
+    }
+
     logger.info('Starting blog post processing')
     const formData = await request.formData()
     const coverImage = formData.get('coverImage') as File
@@ -147,7 +154,7 @@ async function handler(request: NextRequest) {
       message: error.message,
     })
     return NextResponse.json(
-      { success: false, message: 'Failed to process blog post', error: error.message },
+      { success: false, message: 'Failed to process blog post' },
       { status: 500 }
     )
   }

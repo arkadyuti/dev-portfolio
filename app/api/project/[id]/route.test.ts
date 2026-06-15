@@ -33,7 +33,14 @@ vi.mock('@/lib/logger', () => ({
   logger: { info: vi.fn(), warn: vi.fn(), error: vi.fn() },
 }))
 
+vi.mock('@/lib/auth/helpers', () => ({
+  getCurrentUser: vi.fn(),
+}))
+
 import { GET, DELETE } from './route'
+import { getCurrentUser } from '@/lib/auth/helpers'
+
+const mockGetCurrentUser = vi.mocked(getCurrentUser)
 
 function makeRequest(method: string, id: string) {
   return {
@@ -69,6 +76,12 @@ beforeEach(() => {
   mockProjectDeleteOne.mockResolvedValue({ deletedCount: 1 })
   mockTransformToProject.mockReturnValue(mockTransformedProject)
   mockDeleteFile.mockResolvedValue(undefined)
+  mockGetCurrentUser.mockResolvedValue({
+    id: 'u1',
+    email: 'admin@test.local',
+    role: 'admin',
+    sessionId: 's1',
+  })
 })
 
 describe('GET /api/project/[id]', () => {
@@ -157,5 +170,15 @@ describe('DELETE /api/project/[id]', () => {
     const { req, context } = makeRequest('DELETE', 'proj-abc')
     const res = await DELETE(req, context)
     expect(res.status).toBe(500)
+  })
+
+  it('returns 401 when user is not authenticated', async () => {
+    mockGetCurrentUser.mockResolvedValue(null)
+    const { req, context } = makeRequest('DELETE', 'proj-abc')
+    const res = await DELETE(req, context)
+    expect(res.status).toBe(401)
+    const json = await res.json()
+    expect(json.success).toBe(false)
+    expect(json.message).toBe('Unauthorized')
   })
 })

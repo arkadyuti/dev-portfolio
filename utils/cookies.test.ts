@@ -444,11 +444,42 @@ describe('cookies utility', () => {
     it('removes all cookies visible to JavaScript', () => {
       setCookie('x', '1')
       setCookie('y', '2')
+      // Verify they were actually set before clearing
+      expect(getCookie('x')).toBe('1')
+      expect(getCookie('y')).toBe('2')
+
       clearAllCookies()
-      // jsdom may not actually expire them immediately because of its minimal cookie handling,
-      // but at minimum the function should not throw and should attempt deletion of each key
-      // We verify by checking that it doesn't throw
+
+      // jsdom honours expires=epoch for path=/ deletions, so the cookies
+      // should no longer be readable after clearAllCookies().
+      expect(getCookie('x')).toBeNull()
+      expect(getCookie('y')).toBeNull()
+      expect(getAllCookies()).toEqual({})
+    })
+
+    it('is idempotent — calling on an empty jar does not throw', () => {
       expect(() => clearAllCookies()).not.toThrow()
+    })
+  })
+
+  // -----------------------------------------------------------------------
+  // Round-trip preservation of values containing '='
+  // -----------------------------------------------------------------------
+  describe('setCookie / getCookie round-trip with "=" in value', () => {
+    it('preserves a base64 value that contains "=" padding characters', () => {
+      // 'YWJjZA==' is the base64 encoding of 'abcd' — it contains two '=' chars.
+      // getCookie previously split on the first '=' in the raw cookie string which
+      // would truncate the value; the source now uses indexOf('=') correctly.
+      const base64Value = 'YWJjZA=='
+      setCookie('token', base64Value)
+      expect(getCookie('token')).toBe(base64Value)
+    })
+
+    it('preserves a value with multiple "=" signs', () => {
+      // Simulate a longer base64 string with multiple padding chars embedded mid-value.
+      const multiEq = 'abc==def==ghi'
+      setCookie('data', multiEq)
+      expect(getCookie('data')).toBe(multiEq)
     })
   })
 })
