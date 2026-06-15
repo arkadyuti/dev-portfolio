@@ -56,14 +56,14 @@ async function connectToDatabase() {
     const isProduction = process.env.NODE_ENV === 'production'
     const isBuildTime = process.env.NEXT_PHASE === 'phase-production-build'
 
-    if (!isProduction || !isBuildTime) {
+    if (!isProduction && !isBuildTime) {
       logger.info('Creating new MongoDB connection')
     }
 
     cached.promise = mongoose
       .connect(MONGODB_URI, opts)
       .then((mongoose) => {
-        if (!isProduction || !isBuildTime) {
+        if (!isProduction && !isBuildTime) {
           logger.info('MongoDB connected successfully')
         }
         return mongoose
@@ -93,7 +93,7 @@ if (!global.mongoEventListenersRegistered) {
     const isProduction = process.env.NODE_ENV === 'production'
     const isBuildTime = process.env.NEXT_PHASE === 'phase-production-build'
 
-    if (!isProduction || !isBuildTime) {
+    if (!isProduction && !isBuildTime) {
       logger.info('MongoDB connection established')
     }
   })
@@ -106,7 +106,7 @@ if (!global.mongoEventListenersRegistered) {
     const isProduction = process.env.NODE_ENV === 'production'
     const isBuildTime = process.env.NEXT_PHASE === 'phase-production-build'
 
-    if (!isProduction || !isBuildTime) {
+    if (!isProduction && !isBuildTime) {
       logger.warn('MongoDB connection disconnected')
     }
   })

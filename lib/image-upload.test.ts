@@ -111,8 +111,10 @@ describe('uploadTempImage', () => {
       tempImagesPath: 'uploads/temp',
     })
 
+    // Expected: mock getPublicFileUrl returns `https://minio.test.local/<bucket>/<file>`.
+    // uuid is mocked to 'test-uuid-1234', so tempFilename is predictable.
     expect(result.coverImage).toBe(
-      mockGetPublicFileUrl('portfolio', result.tempFilename)
+      'https://minio.test.local/portfolio/uploads/temp/temp_test-uuid-1234_cover-image.png'
     )
   })
 

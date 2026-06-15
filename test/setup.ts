@@ -18,7 +18,9 @@ process.env.REDIS_HOST ||= 'localhost'
 process.env.REDIS_PORT ||= '6379'
 
 // Clean up the DOM and any mocks between tests to keep them isolated.
+// `cleanup()` touches the DOM, so guard it for test files that opt into the
+// `node` environment (e.g. jwt-edge) where `document` is undefined.
 afterEach(() => {
-  cleanup()
+  if (typeof document !== 'undefined') cleanup()
   vi.clearAllMocks()
 })

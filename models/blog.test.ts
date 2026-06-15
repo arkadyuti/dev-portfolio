@@ -4,7 +4,16 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 // Mock mongoose BEFORE importing the model.
 // The model file calls mongoose.model(...) at module scope, which requires
 // a live connection. By mocking the module we can import the pure helpers.
+//
+// We also capture the last Schema instance constructed so we can invoke
+// registered pre-save hooks directly in tests.  The capture object must be
+// created via vi.hoisted so it is available when the vi.mock factory runs
+// (vi.mock factories are hoisted to the top of the file by Vitest/Babel,
+// before any let/const declarations).
 // ---------------------------------------------------------------------------
+
+const capture = vi.hoisted(() => ({ schemaInstance: null as any }))
+
 vi.mock('mongoose', () => {
   const Schema: any = function (this: any, definition: any, options: any) {
     this._definition = definition
@@ -20,6 +29,8 @@ vi.mock('mongoose', () => {
     this.methods = {}
     this.statics = {}
     this.index = function () {}
+    // Capture this instance so tests can access registered hooks
+    capture.schemaInstance = this
   }
   Schema.Types = { Mixed: 'Mixed', ObjectId: 'ObjectId' }
 
@@ -197,13 +208,74 @@ describe('models/blog.ts', () => {
   })
 
   // -----------------------------------------------------------------------
-  // slug generation logic (extracted from pre-save hook)
+  // slug generation logic — exercising the REAL pre('save') hook
   // -----------------------------------------------------------------------
   describe('slug generation logic', () => {
     /**
-     * The actual hook runs against a Mongoose document. We test the slug
-     * transformation rules by applying the same regex operations directly.
+     * The mongoose mock captures registered pre-save hooks in `_hooks.pre`.
+     * We invoke the real hook function with a controlled `this` context (a fake
+     * Mongoose document) and a no-op `next` callback to test slug derivation
+     * without needing a live database connection.
+     *
+     * Tests that only check pure regex transformations are kept as a fast
+     * fallback but at least one test below drives the actual registered hook.
      */
+
+    /**
+     * Invoke the real pre-save hook registered on BlogSchema.
+     * @param fakeDoc - Object acting as `this` inside the hook function.
+     * @param findOneResult - Value findOne resolves with (null = no collision).
+     */
+    async function runPreSaveHook(
+      fakeDoc: Record<string, any>,
+      findOneResult: any = null
+    ): Promise<void> {
+      // capture.schemaInstance is set when mongoose.Schema was constructed at
+      // module load time; the _hooks.pre array holds { event, fn } entries.
+      const saveHooks = capture.schemaInstance._hooks.pre.filter(
+        (h: any) => h.event === 'save'
+      )
+      expect(saveHooks).toHaveLength(1) // sanity check
+
+      // The hook uses `this.constructor.findOne` — wire it up on the fake doc.
+      fakeDoc.constructor = {
+        findOne: vi.fn().mockResolvedValue(findOneResult),
+      }
+
+      const next = vi.fn()
+      await saveHooks[0].fn.call(fakeDoc, next)
+      expect(next).toHaveBeenCalled()
+    }
+
+    it('real hook: generates slug from title when slug is empty', async () => {
+      const doc: Record<string, any> = { title: 'Hello World', slug: '' }
+      await runPreSaveHook(doc)
+      expect(doc.slug).toBe('hello-world')
+    })
+
+    it('real hook: does not overwrite an existing slug', async () => {
+      const doc: Record<string, any> = { title: 'Hello World', slug: 'existing-slug' }
+      await runPreSaveHook(doc)
+      expect(doc.slug).toBe('existing-slug')
+    })
+
+    it('real hook: appends timestamp suffix when base slug already exists', async () => {
+      const before = Date.now()
+      const doc: Record<string, any> = { title: 'Duplicate Title', slug: '' }
+      // findOne returns a truthy value → collision detected
+      await runPreSaveHook(doc, { _id: 'existing' })
+      const after = Date.now()
+
+      expect(doc.slug).toMatch(/^duplicate-title-\d{6}$/)
+      // The 6-digit suffix comes from the last 6 digits of Date.now()
+      const suffix = parseInt(doc.slug.split('-').pop()!, 10)
+      // Last 6 digits of any timestamp in [before, after]
+      expect(suffix).toBeGreaterThanOrEqual(0)
+      expect(suffix).toBeLessThan(1_000_000)
+    })
+
+    // ── pure regex helpers (kept for fast, dependency-free coverage) ────────
+
     function generateBaseSlug(title: string): string {
       return title
         .toLowerCase()

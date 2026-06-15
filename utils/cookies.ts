@@ -95,7 +95,10 @@ export function getCookie(name: string): string | null {
     const cookies = document.cookie.split(';')
 
     for (const cookie of cookies) {
-      const [cookieName, cookieValue] = cookie.split('=').map((c) => c.trim())
+      // Split on the FIRST '=' only — values may contain '=' (e.g. base64/JWT padding)
+      const eqIndex = cookie.indexOf('=')
+      const cookieName = (eqIndex === -1 ? cookie : cookie.slice(0, eqIndex)).trim()
+      const cookieValue = eqIndex === -1 ? '' : cookie.slice(eqIndex + 1).trim()
 
       if (cookieName === encodedName) {
         return decodeURIComponent(cookieValue || '')
@@ -153,7 +156,10 @@ export function getAllCookies(): Record<string, string> {
     const cookieStrings = document.cookie.split(';')
 
     for (const cookie of cookieStrings) {
-      const [name, value] = cookie.split('=').map((c) => c.trim())
+      // Split on the FIRST '=' only — values may contain '=' (e.g. base64/JWT padding)
+      const eqIndex = cookie.indexOf('=')
+      const name = (eqIndex === -1 ? cookie : cookie.slice(0, eqIndex)).trim()
+      const value = eqIndex === -1 ? '' : cookie.slice(eqIndex + 1).trim()
 
       if (name) {
         cookies[decodeURIComponent(name)] = decodeURIComponent(value || '')

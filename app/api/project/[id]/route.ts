@@ -3,6 +3,7 @@ import ProjectModels, { transformToProject } from 'models/project'
 import { deleteFile } from '@/lib/minio'
 import { logger } from '@/lib/logger'
 import { withDatabase } from '@/lib/api-middleware'
+import { getCurrentUser } from '@/lib/auth/helpers'
 
 // GET a single project by ID
 async function getHandler(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
@@ -33,6 +34,12 @@ async function deleteHandler(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    // Require authentication — this route deletes content
+    const user = await getCurrentUser()
+    if (!user) {
+      return NextResponse.json({ success: false, message: 'Unauthorized' }, { status: 401 })
+    }
+
     const { id } = await params
     const project = await ProjectModels.findOne({ id })
 

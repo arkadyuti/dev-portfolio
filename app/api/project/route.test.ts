@@ -31,7 +31,12 @@ vi.mock('@/lib/logger', () => ({
   logger: { info: vi.fn(), warn: vi.fn(), error: vi.fn() },
 }))
 
+vi.mock('@/lib/auth/helpers', () => ({ getCurrentUser: vi.fn() }))
+
 import { POST } from './route'
+import { getCurrentUser } from '@/lib/auth/helpers'
+
+const mockGetCurrentUser = vi.mocked(getCurrentUser)
 
 function makeFormDataRequest(fields: Record<string, string>, file?: File) {
   const formData = new FormData()
@@ -82,6 +87,7 @@ beforeEach(() => {
     coverImageKey: 'project-images/id/img.jpg',
   })
   savedProjectDoc.save.mockResolvedValue(savedProjectDoc)
+  mockGetCurrentUser.mockResolvedValue({ id: 'u1', email: 'admin@test.local', role: 'admin', sessionId: 's1' })
 })
 
 describe('POST /api/project', () => {
@@ -141,6 +147,16 @@ describe('POST /api/project', () => {
     const req = makeFormDataRequest(baseFields)
     const res = await POST(req)
     expect(res.status).toBe(500)
+    const json = await res.json()
+    expect(json.success).toBe(false)
+  })
+
+  it('returns 401 when user is not authenticated', async () => {
+    mockGetCurrentUser.mockResolvedValue(null)
+
+    const req = makeFormDataRequest(baseFields)
+    const res = await POST(req)
+    expect(res.status).toBe(401)
     const json = await res.json()
     expect(json.success).toBe(false)
   })
