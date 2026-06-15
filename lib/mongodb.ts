@@ -36,10 +36,15 @@ async function connectToDatabase() {
   if (!cached.promise) {
     const opts = {
       bufferCommands: false,
-      // Add connection pooling options
+      // Connection pool tuned for a long-running server (not serverless).
+      // The previous config (minPoolSize: 5 + maxIdleTimeMS: 10000) constantly
+      // reaped idle connections after 10s and reopened them, producing a flood
+      // of connect/auth/disconnect cycles that filled the MongoDB log and the
+      // disk. On a persistent process we instead keep idle connections alive and
+      // reuse them, so they are opened on demand and not churned.
       maxPoolSize: 10,
-      minPoolSize: 5,
-      maxIdleTimeMS: 10000, // Close idle connections after 10 seconds (critical for serverless)
+      minPoolSize: 0, // don't force-maintain idle connections
+      maxIdleTimeMS: 0, // 0 = never reap idle connections; reuse across requests
       socketTimeoutMS: 45000,
       connectTimeoutMS: 10000,
       serverSelectionTimeoutMS: 10000,

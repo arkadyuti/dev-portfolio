@@ -40,7 +40,13 @@ export const transformToType = <T>(
 
   // Handle both Mongoose documents and plain objects
   const data = 'toObject' in doc && typeof doc.toObject === 'function' ? doc.toObject() : doc
-  return schema.parse(data)
+
+  try {
+    return schema.parse(data)
+  } catch (error) {
+    console.error('Schema validation error:', error)
+    return null
+  }
 }
 
 // Utility function to transform and validate Mongoose document to IProject

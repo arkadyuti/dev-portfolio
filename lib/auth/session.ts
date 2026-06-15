@@ -198,10 +198,10 @@ export async function extendSession(sessionId: string): Promise<boolean> {
   const redis = await getConnectedRedisClient()
   const key = `session:${sessionId}`
 
-  const data = await redis.get(key)
-  if (!data) return false
-
   try {
+    const data = await redis.get(key)
+    if (!data) return false
+
     const sessionData: SessionData = JSON.parse(data)
     const now = Date.now()
 
