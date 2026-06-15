@@ -10,24 +10,26 @@ function getMinioClient(): Minio.Client {
     initializationAttempted = true
 
     if (!process.env.MINIO_ENDPOINT) {
+      // Leave minioClient null and fall through to the throw below so callers
+      // get a clear error on the FIRST call too (previously this returned null,
+      // which crashed downstream with "Cannot read properties of null").
       logger.warn('MinIO not configured: MINIO_ENDPOINT not set')
-      return null
-    }
+    } else {
+      try {
+        const clientConfig = {
+          endPoint: process.env.MINIO_ENDPOINT,
+          port: process.env.MINIO_PORT ? parseInt(process.env.MINIO_PORT) : 9000,
+          useSSL: process.env.MINIO_USE_SSL === 'true',
+          accessKey: process.env.MINIO_KEY || 'minioadmin',
+          secretKey: process.env.MINIO_SECRET || 'minioadmin',
+        }
 
-    try {
-      const clientConfig = {
-        endPoint: process.env.MINIO_ENDPOINT,
-        port: process.env.MINIO_PORT ? parseInt(process.env.MINIO_PORT) : 9000,
-        useSSL: process.env.MINIO_USE_SSL === 'true',
-        accessKey: process.env.MINIO_KEY || 'minioadmin',
-        secretKey: process.env.MINIO_SECRET || 'minioadmin',
+        minioClient = new Minio.Client(clientConfig)
+        logger.info('MinIO client initialized successfully')
+      } catch (error) {
+        logger.error('Failed to initialize MinIO client:', error)
+        minioClient = null
       }
-
-      minioClient = new Minio.Client(clientConfig)
-      logger.info('MinIO client initialized successfully')
-    } catch (error) {
-      logger.error('Failed to initialize MinIO client:', error)
-      minioClient = null
     }
   }
 

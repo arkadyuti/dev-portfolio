@@ -11,6 +11,10 @@ async function getHandler(request: NextRequest, context: { params: Promise<{ id:
     // Find the blog post by id
     const existingBlog = await BlogModels.findOne({ id })
 
+    if (!existingBlog) {
+      return NextResponse.json({ success: false, message: 'Blog not found' }, { status: 404 })
+    }
+
     const transformedBlog = transformToBlog(
       existingBlog.toObject({
         minimize: false, // This prevents removal of empty objects
